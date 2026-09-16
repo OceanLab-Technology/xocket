@@ -14,7 +14,9 @@ export async function generateProject(config: Config, targetDir: string) {
   const { projectName } = config;
   const templateDir = path.resolve(__dirname, '../../../templates', 'expo');
 
-  await fs.copy(templateDir, targetDir);
+  await fs.copy(templateDir, targetDir, {
+    filter: (src) => !src.includes('node_modules') && !src.endsWith('package-lock.json') && !src.endsWith('.DS_Store'),
+  });
 
   await writeFile(
     path.join(targetDir, 'tsconfig.json'),

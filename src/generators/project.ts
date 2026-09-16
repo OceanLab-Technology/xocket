@@ -15,7 +15,9 @@ export async function generateProject(config: Config) {
   const templateName = framework === 'next' ? 'next' : 'react';
   const templateDir = path.resolve(__dirname, '../../templates', templateName);
 
-  await fs.copy(templateDir, webDir);
+  await fs.copy(templateDir, webDir, {
+    filter: (src) => !src.includes('node_modules') && !src.endsWith('package-lock.json') && !src.endsWith('.DS_Store'),
+  });
 
   let pkg = await readPkg(webDir);
   pkg.name = `@${projectName}/web`;

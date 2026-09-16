@@ -3,18 +3,25 @@
   "version": "2.0.0",
   "description": "Xocket — Monorepo Development Platform CLI",
   "type": "module",
+  "main": "./dist/index.js",
   "bin": {
     "xocket": "./dist/index.js"
   },
   "files": [
     "dist/",
-    "templates/"
+    "templates/",
+    "!templates/**/node_modules",
+    "!templates/**/package-lock.json",
+    "!**/.DS_Store"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
+    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "prebuild": "npm run clean",
     "build": "tsc",
+    "postbuild": "node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
     "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js"
@@ -36,7 +43,16 @@
     "turborepo",
     "pnpm"
   ],
+  "author": "OceanLab Technology",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OceanLab-Technology/xocket_template.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OceanLab-Technology/xocket_template/issues"
+  },
+  "homepage": "https://github.com/OceanLab-Technology/xocket_template#readme",
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^26.4.1",
