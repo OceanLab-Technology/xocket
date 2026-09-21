@@ -4,7 +4,9 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'templates/**', 'coverage/**'],
+    // build/ holds the generated standalone bundle; templates/ is copied
+    // verbatim into generated projects and linted there, not here.
+    ignores: ['dist/**', 'build/**', 'node_modules/**', 'templates/**', 'coverage/**'],
   },
   {
     files: ['**/*.ts'],

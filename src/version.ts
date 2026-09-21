@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * resolves correctly for both `tsx src/` and the published build.
  */
 function readVersion(): string {
+  // dist/version.js -> ../package.json;  lib/xocket.mjs -> ../package.json
   for (const candidate of ['../package.json', '../../package.json']) {
     const file = path.resolve(__dirname, candidate);
     try {

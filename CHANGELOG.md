@@ -91,6 +91,11 @@ on 10.
 - **Release pipeline** — publishes from CI on a `v*` tag with npm provenance,
   after verifying the tag matches package.json, the tarball carries the
   templates, and a project scaffolded from that tarball passes every gate.
+- **Standalone installer** — `curl -fsSL https://get.xocket.sh | sh` installs
+  `xocket` onto PATH from a ~300 KB tarball, with SHA-256 verification and no
+  sudo. Deliberately not a compiled binary: Xocket runs on Node and so does
+  every project it generates, so embedding a runtime would cost ~60 MB per
+  platform and force the templates to become build-time assets.
 - **Repo tooling** — husky (lint-staged, commitlint, pre-push), ESLint and
   Prettier for the CLI itself, and `pnpm verify:output` to scaffold a throwaway
   project and run every gate against it.

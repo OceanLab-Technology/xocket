@@ -63,10 +63,16 @@ jobs:
           done
           echo "Tarball contents OK"
 
+      - name: Build the standalone tarball
+        run: pnpm build:standalone
+
       - uses: actions/upload-artifact@v7
         with:
           name: package
-          path: /tmp/xocket-*.tgz
+          path: |
+            /tmp/xocket-*.tgz
+            build/xocket-*.tar.gz
+            build/xocket-*.tar.gz.sha256
 
   # A published CLI has to produce a working project, not merely install. This
   # installs the real tarball and scaffolds with it.
@@ -107,9 +113,73 @@ jobs:
           pnpm build
         working-directory: ${{ runner.temp }}/smoke-app
 
+  # The install script is what `curl | sh` runs on a stranger's machine, so it
+  # gets linted and exercised against the real artifact before release.
+  installer:
+    name: Install script
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+          path: /tmp/pkg
+
+      - name: Lint the installer
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -s sh scripts/install.sh
+          # It must also parse under dash, not just bash.
+          dash -n scripts/install.sh
+
+      - name: Install from a local release and scaffold with it
+        run: |
+          set -eux
+          mkdir -p srv/releases/download/v"$VERSION"
+          cp /tmp/pkg/build/xocket-*.tar.gz* srv/releases/download/v"$VERSION"/
+          (cd srv && python3 -m http.server 8799 &)
+          sleep 2
+
+          sed 's|https://github.com/${REPO}/releases/download|http://localhost:8799/releases/download|' \
+            scripts/install.sh > /tmp/install-local.sh
+
+          XOCKET_VERSION="$VERSION" \
+          XOCKET_INSTALL="$HOME/.local/share/xocket" \
+          XOCKET_BIN="$HOME/.local/bin" \
+            sh /tmp/install-local.sh
+
+          export PATH="$HOME/.local/bin:$PATH"
+          test "$(xocket --version)" = "$VERSION"
+
+          cd "$(mktemp -d)"
+          xocket create installed-app --yes --no-git -f next -s zustand -b supabase --ai-seo
+          cd installed-app
+          pnpm lint && pnpm type-check && pnpm build && pnpm test
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+
+      - name: A tampered download must be refused
+        run: |
+          set -eux
+          printf 'corrupted' >> srv/releases/download/v"$VERSION"/xocket-"$VERSION".tar.gz
+          if XOCKET_VERSION="$VERSION" \
+             XOCKET_INSTALL="$HOME/.local/share/xocket2" \
+             XOCKET_BIN="$HOME/.local/bin2" \
+               sh /tmp/install-local.sh; then
+            echo "::error::the installer accepted a tampered tarball"
+            exit 1
+          fi
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+
   publish:
     name: Publish to npm
-    needs: [verify, smoke]
+    needs: [verify, smoke, installer]
     if: github.ref_type == 'tag' || inputs.dry_run == false
     runs-on: ubuntu-latest
     environment:
@@ -130,6 +200,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+
+      # The install script downloads these from the release created below.
+      - name: Build the standalone tarball
+        run: pnpm build:standalone
 
       - name: Publish
         # With Trusted Publishing configured on npmjs.com this needs no token —
@@ -156,4 +230,6 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
             --notes-file notes.md \
-            --verify-tag
+            --verify-tag \
+            build/xocket-"$VERSION".tar.gz \
+            build/xocket-"$VERSION".tar.gz.sha256

@@ -37,6 +37,19 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Lint the install script
+        run: |
+          # This is what `curl | sh` runs on other people's machines.
+          shellcheck -s sh scripts/install.sh
+          dash -n scripts/install.sh
+
+      - name: The standalone tarball must build and run
+        run: |
+          set -eux
+          pnpm build:standalone
+          tar -xzf build/xocket-*.tar.gz -C "$RUNNER_TEMP"
+          test "$("$RUNNER_TEMP"/xocket/bin/xocket --version)" = "$(node -p "require('./package.json').version")"
+
       - run: pnpm build
       - run: pnpm test
 

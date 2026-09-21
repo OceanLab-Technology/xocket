@@ -14,20 +14,59 @@
 </p>
 
 ```bash
+curl -fsSL https://get.xocket.sh | sh    # install the CLI
+npx xocket create my-project             # or run it without installing
+```
+
+## Install
+
+**As a CLI** — puts `xocket` on your PATH:
+
+```bash
+curl -fsSL https://get.xocket.sh | sh
+```
+
+<details>
+<summary>What that does, and how to undo it</summary>
+
+It checks for Node 20.19+, downloads the release tarball from GitHub, verifies
+its SHA-256, and unpacks it to `~/.local/share/xocket` with a symlink at
+`~/.local/bin/xocket`. Nothing is installed system-wide and nothing needs sudo.
+
+```bash
+XOCKET_VERSION=3.0.0 curl -fsSL https://get.xocket.sh | sh   # pin a version
+XOCKET_BIN=~/bin      curl -fsSL https://get.xocket.sh | sh   # choose the bin dir
+
+rm -rf ~/.local/share/xocket ~/.local/bin/xocket             # uninstall
+```
+
+Prefer to read it first? It is [`scripts/install.sh`](scripts/install.sh) — and
+reading a script before piping it to a shell is a good habit.
+
+</details>
+
+**Or without installing anything:**
+
+```bash
 npx xocket create my-project
 ```
+
+Both ship the same code. The installer is a ~300 KB tarball, not a compiled
+binary: Xocket runs on Node and so does every project it generates, so
+embedding a second runtime would add ~60 MB per platform to avoid a dependency
+you need either way.
 
 ## Quick start
 
 ```bash
 # Interactive
-npx xocket create my-project
+xocket create my-project
 
 # Non-interactive — every question has a flag
-npx xocket create my-project --yes -f next -s zustand -b supabase --ai-seo
+xocket create my-project --yes -f next -s zustand -b supabase --ai-seo
 
 # From an org preset
-npx xocket create my-project --template ./team-preset.json --yes
+xocket create my-project --template ./team-preset.json --yes
 ```
 
 ## What you get

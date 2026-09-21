@@ -33,7 +33,11 @@ export function templateCopyFilter(templateRoot: string) {
 
 /** Resolve a template directory for both `tsx src/` and the published build. */
 export function templateDir(name: string): string {
-  for (const up of ['../../templates', '../../../templates']) {
+  // Layouts this has to satisfy:
+  //   npm      dist/generators/…      -> ../../templates
+  //   tsx      src/generators/…       -> ../../templates
+  //   tarball  lib/xocket.mjs         -> ../templates
+  for (const up of ['../../templates', '../templates', '../../../templates']) {
     const dir = path.resolve(__dirname, up, name);
     if (fs.existsSync(dir)) return dir;
   }
