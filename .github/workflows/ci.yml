@@ -234,3 +234,132 @@ jobs:
           echo "service never became healthy" >&2
           exit 1
         working-directory: ${{ runner.temp }}/ci-app
+
+  # ── The optional modules, each on a project that actually installs. ────────
+  modules:
+    name: add ${{ matrix.module }}
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: db
+            args: --orm drizzle
+            framework: next
+          - module: db
+            args: --orm prisma
+            framework: next
+          - module: auth-ui
+            args: ''
+            framework: next
+          - module: auth-ui
+            args: ''
+            framework: react
+          - module: agent
+            args: --name my-mcp
+            framework: next
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Scaffold + add module
+        run: |
+          node "${{ github.workspace }}/dist/index.js" create ci-app \
+            --yes --no-git -f ${{ matrix.framework }} -s zustand -b supabase --no-seo --no-install
+          cd ci-app
+          node "${{ github.workspace }}/dist/index.js" add ${{ matrix.module }} ${{ matrix.args }} --yes --no-install
+          pnpm install
+        working-directory: ${{ runner.temp }}
+
+      - name: Lint + type-check + build
+        run: |
+          pnpm lint
+          pnpm type-check
+          pnpm build
+        working-directory: ${{ runner.temp }}/ci-app
+
+  # ── An org preset must produce a workspace that still passes every gate. ──
+  preset:
+    name: preset (full stack)
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.24'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Write a preset exercising every module
+        run: |
+          cat > preset.json <<'JSON'
+          {
+            "name": "ci full stack",
+            "framework": "next",
+            "stateManagement": "zustand",
+            "serverState": "tanstack",
+            "backend": "supabase",
+            "seo": true,
+            "aiSeo": true,
+            "modules": [
+              { "module": "db", "orm": "drizzle" },
+              { "module": "backend", "lang": "go", "name": "orders-api" },
+              { "module": "agent", "name": "mcp" },
+              "auth-ui",
+              { "module": "docker", "target": "both" }
+            ]
+          }
+          JSON
+          node "${{ github.workspace }}/dist/index.js" create ci-app \
+            --template ./preset.json --yes --no-git
+        working-directory: ${{ runner.temp }}
+
+      - name: Every gate, across the whole workspace
+        run: |
+          pnpm lint
+          pnpm type-check
+          pnpm test
+          pnpm build
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Generated YAML must parse
+        run: |
+          set -eux
+          python3 -c "import yaml,sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" \
+            docker-compose.yml .github/workflows/ci.yml .github/dependabot.yml infra/k8s/*.yaml
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Generated Dockerfiles must build
+        run: |
+          set -eux
+          docker build -f services/orders-api/Dockerfile -t ci-go .
+          docker run --rm -d -p 3002:3002 --name ci-go ci-go
+          for i in $(seq 1 20); do
+            sleep 1
+            curl -fsS http://localhost:3002/health && break
+          done
+          docker rm -f ci-go
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: doctor reports a clean bill of health
+        run: node "${{ github.workspace }}/dist/index.js" doctor
+        working-directory: ${{ runner.temp }}/ci-app

@@ -7,18 +7,21 @@ A Node CLI (TypeScript, ESM) that scaffolds pnpm + Turborepo monorepos.
 | Path | Role |
 |---|---|
 | `src/index.ts` | Commander entry point; every flag is declared here |
-| `src/schema.ts` | **All** user-facing choices, as zod schemas. Prompts, flags and the on-disk manifest are validated against these |
+| `src/schema.ts` | **All** user-facing choices, as zod schemas. Prompts, flags, presets and the on-disk manifest validate against these |
 | `src/versions.ts` | **Every** dependency version Xocket emits. Never inline a range in a generator |
 | `src/version.ts` | CLI version, read from package.json — do not hardcode it |
-| `src/cli/` | Commands, prompts, config derivation |
+| `src/ui/` | Terminal styling: theme, banner, stepped progress, summary blocks |
+| `src/cli/` | Commands (`create`, `add`, `doctor`), prompts, config derivation |
 | `src/generators/` | One module per concern; each takes a `Config` and writes files |
 | `src/utils/env.ts` | Public-env conventions per target (`VITE_` / `NEXT_PUBLIC_` / `EXPO_PUBLIC_`) |
+| `src/utils/preset.ts` | Org preset loading and validation |
 | `templates/` | Files copied verbatim, then patched by generators |
 | `tests/` | Vitest; `generators.test.ts` pins previously-shipped bugs |
 
 ## Rules that exist for a reason
 
-Each of these encodes a bug that shipped in 2.0.0. There is a test for every one.
+Each encodes a bug that shipped in 2.0.0. There is a test for every one, and
+`xocket doctor` detects each in an existing project.
 
 1. **Versions go in `src/versions.ts`.** A stack refresh should be a one-file diff.
 2. **`include` / `exclude` / `paths` belong in the app's tsconfig, never the shared
@@ -40,17 +43,25 @@ Each of these encodes a bug that shipped in 2.0.0. There is a test for every one
    loaded the empty one and silently dropped Sentry.
 8. **If the summary prints "✓ X", X must actually work.**
 
+## Terminal output
+
+`src/ui/theme.ts` owns the palette; call sites use the semantic helpers (`t.value`,
+`t.muted`, `t.error`) rather than picocolors directly, so a palette change is one
+edit. Everything degrades: `gradient()` falls back to plain cyan without
+truecolor, the banner collapses to one line off a TTY, and `Steps` prints linear
+lines instead of spinners. Never assume stdout is a terminal.
+
 ## Testing
 
 ```bash
 pnpm test           # fast: unit + generator assertions, no installs
-pnpm build && node dist/index.js create /tmp/demo --yes --no-git   # real scaffold
+pnpm build && node dist/index.js create /tmp/demo --yes --no-git
 ```
 
-The generator tests write real trees to a temp dir and assert on the output;
-they do not run `pnpm install`. Anything requiring a real install or toolchain
-belongs in CI (`.github/workflows/ci.yml`), which scaffolds the full matrix and
-runs `lint`, `type-check` and `build` against it.
+Generator tests write real trees to a temp dir and assert on the output; they do
+not run `pnpm install`. Anything needing a real install or toolchain belongs in
+CI (`.github/workflows/ci.yml`), which scaffolds the full matrix plus Expo, each
+backend language, each optional module, and a full-stack preset.
 
 ## Adding a stack option
 
@@ -59,3 +70,12 @@ runs `lint`, `type-check` and `build` against it.
 3. Handle it in the generator(s).
 4. Add the flag choice in `src/index.ts` (it reads the enum, so usually free).
 5. Extend the CI matrix in `.github/workflows/ci.yml`.
+
+## Adding an `add` module
+
+1. Add the name to `MODULES` in `src/schema.ts`.
+2. Write `src/generators/<module>.ts` (or a directory for a larger one).
+3. Add a `case` in `src/cli/commands/add.ts`.
+4. Add a `case` in `src/cli/commands/apply-modules.ts` so presets can request it.
+   Mind `moduleRank` — `docker` reads the manifest, so it must run last.
+5. Record it in the manifest so `doctor` and later modules can see it.

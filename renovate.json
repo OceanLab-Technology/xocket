@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "timezone": "Asia/Kolkata",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "The CLI's own dependencies. Safe to group — CI runs the unit tests.",
+      "matchFilePatterns": ["package.json"],
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "groupName": "cli dependencies",
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Versions Xocket emits into generated projects. The scaffold matrix proves a bump is safe, so minor/patch can self-merge.",
+      "matchFileNames": ["src/versions.ts"],
+      "groupName": "generated stack",
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Majors always get a human. The generated stack changes shape across majors — Tailwind 3 to 4 removed the config file entirely.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["major", "needs-review"]
+    },
+    {
+      "description": "ESLint 10 is ahead of the plugin ecosystem; eslint-plugin-react peers on ^9.7 and crashes on 10. Unpin this once that lands.",
+      "matchPackageNames": ["eslint", "@eslint/js"],
+      "allowedVersions": "<10"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Keep src/versions.ts in sync with npm. Every range there is emitted into generated projects, so it needs the same update treatment as a real manifest.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^src/versions\\.ts$/"],
+      "matchStrings": [
+        "['\"]?(?<depName>@?[a-z0-9][\\w.-]*(?:/[\\w.-]+)?)['\"]?\\s*:\\s*'(?<currentValue>[~^]?\\d[^']*)'"
+      ],
+      "datasourceTemplate": "npm"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": true
+  }
+}

@@ -31,15 +31,24 @@ function cancel(): never {
  * questions take their default instead of prompting — which is what makes the
  * CLI usable from CI, scripts and coding agents.
  */
-export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Answers> {
+export async function collectCreateAnswers(
+  flags: CreateFlags = {},
+  preset: Partial<Answers> = {},
+): Promise<Answers> {
   const nonInteractive = flags.yes === true;
 
+  // Precedence: explicit flag > preset > prompt > default.
+  const framework = flags.framework ?? preset.framework;
+  const state = flags.state ?? preset.stateManagement;
+  const serverState = flags.serverState ?? preset.serverState;
+  const backend = flags.backend ?? preset.backend;
+
   // SEO is a sub-question of AEO: --ai-seo implies --seo.
-  const seoFlag = flags.aiSeo === true ? true : flags.seo;
+  const seoFlag = flags.aiSeo === true ? true : (flags.seo ?? preset.seo);
 
   const pending: Record<string, () => Promise<unknown>> = {};
 
-  if (flags.name === undefined) {
+  if (flags.name === undefined && preset.projectName === undefined) {
     pending.projectName = () =>
       p.text({
         message: 'Project name:',
@@ -52,7 +61,7 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
       }) as Promise<unknown>;
   }
 
-  if (flags.framework === undefined) {
+  if (framework === undefined) {
     pending.framework = () =>
       p.select({
         message: 'Framework:',
@@ -64,7 +73,7 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
       }) as Promise<unknown>;
   }
 
-  if (flags.state === undefined) {
+  if (state === undefined) {
     pending.stateManagement = () =>
       p.select({
         message: 'State management:',
@@ -78,7 +87,7 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
       }) as Promise<unknown>;
   }
 
-  if (flags.serverState === undefined) {
+  if (serverState === undefined) {
     pending.serverState = () =>
       p.select({
         message: 'Server state:',
@@ -90,7 +99,7 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
       }) as Promise<unknown>;
   }
 
-  if (flags.backend === undefined) {
+  if (backend === undefined) {
     pending.backend = () =>
       p.select({
         message: 'Backend / Authentication:',
@@ -123,7 +132,7 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
   // AEO is only worth asking about once SEO is in — it builds on the same files.
   const resolvedSeo = seoFlag ?? (answered as Record<string, unknown>).seo ?? DEFAULT_ANSWERS.seo;
 
-  let resolvedAiSeo = flags.aiSeo;
+  let resolvedAiSeo = flags.aiSeo ?? preset.aiSeo;
   if (resolvedAiSeo === undefined) {
     if (nonInteractive || resolvedSeo !== true) {
       resolvedAiSeo = false;
@@ -139,14 +148,14 @@ export async function collectCreateAnswers(flags: CreateFlags = {}): Promise<Ans
     }
   }
 
+  const got = answered as Record<string, unknown>;
+
   const merged = {
-    projectName: flags.name ?? (answered as Record<string, unknown>).projectName ?? DEFAULT_ANSWERS.projectName,
-    framework: flags.framework ?? (answered as Record<string, unknown>).framework ?? DEFAULT_ANSWERS.framework,
-    stateManagement:
-      flags.state ?? (answered as Record<string, unknown>).stateManagement ?? DEFAULT_ANSWERS.stateManagement,
-    serverState:
-      flags.serverState ?? (answered as Record<string, unknown>).serverState ?? DEFAULT_ANSWERS.serverState,
-    backend: flags.backend ?? (answered as Record<string, unknown>).backend ?? DEFAULT_ANSWERS.backend,
+    projectName: flags.name ?? preset.projectName ?? got.projectName ?? DEFAULT_ANSWERS.projectName,
+    framework: framework ?? got.framework ?? DEFAULT_ANSWERS.framework,
+    stateManagement: state ?? got.stateManagement ?? DEFAULT_ANSWERS.stateManagement,
+    serverState: serverState ?? got.serverState ?? DEFAULT_ANSWERS.serverState,
+    backend: backend ?? got.backend ?? DEFAULT_ANSWERS.backend,
     seo: resolvedSeo,
     aiSeo: resolvedAiSeo,
   };

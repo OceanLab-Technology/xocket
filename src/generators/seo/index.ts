@@ -5,6 +5,7 @@ import { writeFile, ensureDir } from '../../utils/file.js';
 import { envConvention } from '../../utils/env.js';
 import { AI_CRAWLERS, DISALLOWED_PATHS } from './constants.js';
 import { seoLibSource } from './lib.js';
+import { SPA_SEO_DOC } from './prerender.js';
 
 /**
  * The SEO module.
@@ -277,6 +278,10 @@ export function useSeo({ title, description, path, image, jsonLd }: SeoInput) {
 }
 `,
   );
+
+  // A SPA cannot serve metadata to non-JS crawlers; say so rather than imply
+  // the module solved it.
+  await writeFile(path.join(targetDir, 'SEO.md'), SPA_SEO_DOC);
 
   // Baseline tags in index.html so a non-JS crawler still gets something.
   const indexHtml = path.join(targetDir, 'index.html');

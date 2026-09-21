@@ -10,4 +10,7 @@ export type {
   Manifest,
   ManifestApp,
   ManifestService,
+  DbOrm,
+  DeployTarget,
+  Preset,
 } from './schema.js';

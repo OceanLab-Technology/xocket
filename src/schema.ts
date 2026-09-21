@@ -13,7 +13,9 @@ export const STATE_MANAGERS = ['zustand', 'context', 'redux', 'none'] as const;
 export const SERVER_STATES = ['tanstack', 'none'] as const;
 export const BACKENDS = ['supabase', 'cognito', 'custom', 'none'] as const;
 export const BACKEND_LANGS = ['node', 'go', 'rust', 'python'] as const;
-export const MODULES = ['expo', 'backend', 'seo'] as const;
+export const MODULES = ['expo', 'backend', 'seo', 'db', 'auth-ui', 'agent', 'docker'] as const;
+export const DB_ORMS = ['drizzle', 'prisma'] as const;
+export const DEPLOY_TARGETS = ['compose', 'k8s', 'both'] as const;
 
 export const frameworkSchema = z.enum(FRAMEWORKS);
 export const stateSchema = z.enum(STATE_MANAGERS);
@@ -21,6 +23,11 @@ export const serverStateSchema = z.enum(SERVER_STATES);
 export const backendSchema = z.enum(BACKENDS);
 export const backendLangSchema = z.enum(BACKEND_LANGS);
 export const moduleSchema = z.enum(MODULES);
+export const dbOrmSchema = z.enum(DB_ORMS);
+export const deployTargetSchema = z.enum(DEPLOY_TARGETS);
+
+export type DbOrm = z.infer<typeof dbOrmSchema>;
+export type DeployTarget = z.infer<typeof deployTargetSchema>;
 
 /**
  * Project names become both a directory and an npm scope (`@<name>/web`), so
@@ -79,12 +86,16 @@ export const createFlagsSchema = z.object({
   yes: z.boolean().optional(),
   install: z.boolean().optional(),
   git: z.boolean().optional(),
+  /** A preset file or URL supplying default answers — see utils/preset.ts. */
+  template: z.string().optional(),
 });
 
 export type CreateFlags = z.infer<typeof createFlagsSchema>;
 
 export const addFlagsSchema = z.object({
   lang: backendLangSchema.optional(),
+  orm: dbOrmSchema.optional(),
+  target: deployTargetSchema.optional(),
   name: z
     .string()
     .trim()
@@ -95,6 +106,38 @@ export const addFlagsSchema = z.object({
 });
 
 export type AddFlags = z.infer<typeof addFlagsSchema>;
+
+/**
+ * An org preset. Every field is optional so a preset can pin only the choices
+ * an organisation actually cares about and leave the rest to prompts.
+ */
+export const presetSchema = z.object({
+  $schema: z.string().optional(),
+  name: z.string().optional(),
+  framework: frameworkSchema.optional(),
+  stateManagement: stateSchema.optional(),
+  serverState: serverStateSchema.optional(),
+  backend: backendSchema.optional(),
+  seo: z.boolean().optional(),
+  aiSeo: z.boolean().optional(),
+  /** Modules to add automatically after the project is created. */
+  modules: z
+    .array(
+      z.union([
+        moduleSchema,
+        z.object({
+          module: moduleSchema,
+          lang: backendLangSchema.optional(),
+          orm: dbOrmSchema.optional(),
+          name: z.string().optional(),
+          target: deployTargetSchema.optional(),
+        }),
+      ]),
+    )
+    .default([]),
+});
+
+export type Preset = z.infer<typeof presetSchema>;
 
 // ── Manifest ────────────────────────────────────────────────────────────────
 
@@ -114,6 +157,11 @@ export const manifestServiceSchema = z.object({
   lang: backendLangSchema,
 });
 
+export const manifestDbSchema = z.object({
+  orm: dbOrmSchema,
+  path: z.string(),
+});
+
 export const manifestSchema = z.object({
   version: z.string(),
   createdAt: z.string(),
@@ -123,6 +171,7 @@ export const manifestSchema = z.object({
   services: z.record(z.string(), manifestServiceSchema).default({}),
   packages: z.array(z.string()),
   modules: z.array(z.string()).default([]),
+  db: manifestDbSchema.nullish(),
 });
 
 export type Manifest = z.infer<typeof manifestSchema>;

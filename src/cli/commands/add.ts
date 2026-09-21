@@ -1,5 +1,4 @@
 import * as p from '@clack/prompts';
-import pc from 'picocolors';
 import path from 'path';
 
 import { readManifest, updateManifest } from '../../utils/manifest.js';
@@ -8,10 +7,18 @@ import { preflight } from '../../utils/preflight.js';
 import { generateExpo } from '../../generators/expo/index.js';
 import { generateBackend } from '../../generators/backend/index.js';
 import { generateSeo } from '../../generators/seo/index.js';
-import { BANNER } from '../../version.js';
+import { generateDb } from '../../generators/db/index.js';
+import { generateAuthUi } from '../../generators/auth-ui.js';
+import { generateAgent } from '../../generators/agent.js';
+import { generateDocker } from '../../generators/docker.js';
+import { compactBanner } from '../../ui/banner.js';
+import { t, glyph } from '../../ui/theme.js';
+import { commandBlock } from '../../ui/summary.js';
 import {
   addFlagsSchema,
   backendLangSchema,
+  dbOrmSchema,
+  deployTargetSchema,
   BACKEND_LANGS,
   formatZodError,
   MODULES,
@@ -21,7 +28,7 @@ import {
 } from '../../schema.js';
 
 function cancel(message: string, code = 1): never {
-  p.cancel(code === 0 ? pc.yellow(message) : pc.red(message));
+  p.cancel(code === 0 ? t.warn(message) : t.error(message));
   process.exit(code);
 }
 
@@ -54,7 +61,8 @@ function configFromManifest(manifest: Manifest, rootDir: string): Config {
 export async function run(
   { module, ...rawFlags }: AddFlags & { module?: string } = {},
 ): Promise<void> {
-  p.intro(pc.bgCyan(pc.black(BANNER)));
+  console.log(compactBanner(module ? `add ${module}` : 'add'));
+  console.log();
 
   if (!module) {
     cancel(`A module name is required.\n\nAvailable: ${MODULES.join(', ')}`);
@@ -80,7 +88,7 @@ export async function run(
 
   p.note(
     [
-      `Project:         ${pc.cyan(manifest.projectName)}`,
+      `Project:         ${t.value(manifest.projectName)}`,
       `Package manager: ${manifest.packageManager}`,
       `Apps:            ${Object.keys(manifest.apps).join(', ') || '—'}`,
       `Services:        ${Object.keys(manifest.services).join(', ') || '—'}`,
@@ -97,6 +105,18 @@ export async function run(
       break;
     case 'seo':
       await addSeo(config, rootDir, manifest, wantsInstall);
+      break;
+    case 'db':
+      await addDb(config, rootDir, manifest, flags, wantsInstall);
+      break;
+    case 'auth-ui':
+      await addAuthUi(config, rootDir, manifest, wantsInstall);
+      break;
+    case 'agent':
+      await addAgent(config, rootDir, manifest, flags, wantsInstall);
+      break;
+    case 'docker':
+      await addDocker(config, rootDir, manifest, flags);
       break;
     default:
       cancel(`Unknown module: "${module}".\n\nAvailable: ${MODULES.join(', ')}`);
@@ -148,9 +168,9 @@ async function addExpo(
       m.modules = [...new Set([...m.modules, 'expo'])];
       return m;
     });
-    s.stop(pc.green('✓ Expo app generated.'));
+    s.stop(t.success(`${glyph.tick} Expo app generated.`));
   } catch (err) {
-    s.stop(pc.red('✗ Failed to scaffold the Expo app.'));
+    s.stop(t.error(`${glyph.cross} Failed to scaffold the Expo app.`));
     console.error(err);
     process.exit(1);
   }
@@ -163,7 +183,7 @@ async function addExpo(
     ),
     'Next steps',
   );
-  p.outro(pc.green('Done.'));
+  p.outro(t.success('Done.'));
 }
 
 // ── backend ─────────────────────────────────────────────────────────────────
@@ -229,9 +249,9 @@ async function addBackend(
       m.modules = [...new Set([...m.modules, 'backend'])];
       return m;
     });
-    s.stop(pc.green(`✓ ${lang} service generated at services/${name}.`));
+    s.stop(t.success(`${glyph.tick} ${lang} service generated at services/${name}.`));
   } catch (err) {
-    s.stop(pc.red(`✗ Failed to scaffold the ${lang} service.`));
+    s.stop(t.error(`${glyph.cross} Failed to scaffold the ${lang} service.`));
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   }
@@ -257,7 +277,7 @@ async function addBackend(
       .join('\n'),
     'Next steps',
   );
-  p.outro(pc.green(`Created ${path.relative(rootDir, targetDir)}.`));
+  p.outro(t.success(`Created ${path.relative(rootDir, targetDir)}.`));
 }
 
 // ── seo ─────────────────────────────────────────────────────────────────────
@@ -292,9 +312,9 @@ async function addSeo(
       m.modules = [...new Set([...m.modules, 'seo'])];
       return m;
     });
-    s.stop(pc.green('✓ SEO module added.'));
+    s.stop(t.success(`${glyph.tick} SEO module added.`));
   } catch (err) {
-    s.stop(pc.red('✗ Failed to add the SEO module.'));
+    s.stop(t.error(`${glyph.cross} Failed to add the SEO module.`));
     console.error(err);
     process.exit(1);
   }
@@ -308,12 +328,260 @@ async function addSeo(
         ? 'Routes: src/app/robots.ts, src/app/sitemap.ts, src/app/opengraph-image.tsx'
         : 'Static files: public/robots.txt, public/sitemap.xml',
       '',
-      pc.yellow('Note: the root layout was not modified. Import siteMetadata from'),
-      pc.yellow('@/lib/seo into your layout to apply it.'),
+      t.warn('Note: the root layout was not modified. Import siteMetadata from'),
+      t.warn('@/lib/seo into your layout to apply it.'),
     ].join('\n'),
     'Next steps',
   );
-  p.outro(pc.green('Done.'));
+  p.outro(t.success('Done.'));
+}
+
+// ── db ──────────────────────────────────────────────────────────────────────
+
+async function addDb(
+  config: Config,
+  rootDir: string,
+  manifest: Manifest,
+  flags: AddFlags,
+  wantsInstall: boolean,
+) {
+  if (manifest.db) {
+    cancel(`This project already has a ${manifest.db.orm} database package.`, 0);
+  }
+
+  let orm = flags.orm;
+  if (!orm) {
+    if (flags.yes) {
+      orm = 'drizzle';
+    } else {
+      const answer = await p.select({
+        message: 'ORM:',
+        options: [
+          { value: 'drizzle', label: 'Drizzle', hint: 'SQL-first, lightweight, great types' },
+          { value: 'prisma', label: 'Prisma', hint: 'schema-first, generated client, Studio' },
+        ],
+        initialValue: 'drizzle',
+      });
+      if (p.isCancel(answer)) cancel('Operation cancelled.', 0);
+      orm = dbOrmSchema.parse(answer);
+    }
+  }
+
+  const s = p.spinner();
+  s.start(`Scaffolding the ${orm} package…`);
+  try {
+    await generateDb(config, rootDir, { orm });
+    await updateManifest(rootDir, (m) => {
+      m.db = { orm, path: 'packages/db' };
+      m.packages = [...new Set([...m.packages, 'db'])];
+      m.modules = [...new Set([...m.modules, 'db'])];
+      return m;
+    });
+    s.stop(t.success(`${glyph.tick} packages/db created (${orm}).`));
+  } catch (err) {
+    s.stop(t.error(`${glyph.cross} Failed to scaffold the database package.`));
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+
+  await runInstall(rootDir, wantsInstall);
+
+  p.note(
+    [
+      'Set DATABASE_URL in packages/db/.env, then:',
+      '',
+      commandBlock([
+        { cmd: `pnpm --filter @xocket/db db:${orm === 'drizzle' ? 'generate' : 'migrate'}` },
+        { cmd: 'pnpm --filter @xocket/db db:studio', note: 'browse the data' },
+      ]),
+      '',
+      t.muted('Use it from an app:'),
+      t.muted("  pnpm --filter '*/web' add '@xocket/db@workspace:*'"),
+    ].join('\n'),
+    'Next steps',
+  );
+  p.outro(t.success('Done.'));
+}
+
+// ── auth-ui ─────────────────────────────────────────────────────────────────
+
+async function addAuthUi(
+  config: Config,
+  rootDir: string,
+  manifest: Manifest,
+  wantsInstall: boolean,
+) {
+  if (manifest.modules.includes('auth-ui')) {
+    cancel('Auth screens are already installed in apps/web.', 0);
+  }
+
+  const s = p.spinner();
+  s.start('Generating auth screens…');
+  try {
+    await generateAuthUi(config);
+    await updateManifest(rootDir, (m) => {
+      m.modules = [...new Set([...m.modules, 'auth-ui'])];
+      return m;
+    });
+    s.stop(t.success(`${glyph.tick} Auth screens generated for ${config.backend}.`));
+  } catch (err) {
+    s.stop(t.error(`${glyph.cross} Failed to generate auth screens.`));
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+
+  await runInstall(rootDir, wantsInstall);
+
+  p.note(
+    config.framework === 'next'
+      ? [
+          'Routes:     /sign-in and /sign-up',
+          'Component:  src/components/auth/auth-form.tsx',
+          'Client:     src/lib/auth/client.ts',
+          'Middleware: src/middleware.ts',
+          '',
+          t.warn('The middleware only checks that a session cookie exists.'),
+          t.warn('Verify the session server-side before trusting it.'),
+        ].join('\n')
+      : [
+          'Screens:   src/pages/sign-in.tsx and sign-up.tsx',
+          'Component: src/components/auth/auth-form.tsx',
+          'Client:    src/lib/auth/client.ts',
+          '',
+          t.muted('This app has no router — see src/pages/README.md to wire them up.'),
+        ].join('\n'),
+    'Next steps',
+  );
+  p.outro(t.success('Done.'));
+}
+
+// ── agent (MCP) ─────────────────────────────────────────────────────────────
+
+async function addAgent(
+  config: Config,
+  rootDir: string,
+  manifest: Manifest,
+  flags: AddFlags,
+  wantsInstall: boolean,
+) {
+  let name = flags.name;
+  if (!name) {
+    if (flags.yes) {
+      name = 'mcp-server';
+    } else {
+      const answer = await p.text({
+        message: 'Server name:',
+        placeholder: 'mcp-server',
+        initialValue: 'mcp-server',
+        validate: (v) =>
+          /^[a-z0-9][a-z0-9-]*$/.test((v ?? '').trim())
+            ? undefined
+            : 'Lowercase letters, numbers and hyphens only.',
+      });
+      if (p.isCancel(answer)) cancel('Operation cancelled.', 0);
+      name = answer.trim();
+    }
+  }
+
+  if (manifest.services[name]) {
+    cancel(`A service named "${name}" already exists.`);
+  }
+
+  const s = p.spinner();
+  s.start('Scaffolding the MCP server…');
+  try {
+    await generateAgent(config, rootDir, { name });
+    await updateManifest(rootDir, (m) => {
+      m.services[name] = { path: `services/${name}`, lang: 'node' };
+      m.modules = [...new Set([...m.modules, 'agent'])];
+      return m;
+    });
+    s.stop(t.success(`${glyph.tick} MCP server created at services/${name}.`));
+  } catch (err) {
+    s.stop(t.error(`${glyph.cross} Failed to scaffold the MCP server.`));
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+
+  await runInstall(rootDir, wantsInstall);
+
+  p.note(
+    [
+      commandBlock([
+        { cmd: `pnpm --filter ${name} inspect`, note: 'open the MCP Inspector' },
+        { cmd: `pnpm --filter ${name} build` },
+      ]),
+      '',
+      t.muted('Connect it to Claude Code:'),
+      t.muted(`  claude mcp add ${name} -- node "$(pwd)/services/${name}/dist/index.js"`),
+    ].join('\n'),
+    'Next steps',
+  );
+  p.outro(t.success('Done.'));
+}
+
+// ── docker ──────────────────────────────────────────────────────────────────
+
+async function addDocker(
+  config: Config,
+  rootDir: string,
+  manifest: Manifest,
+  flags: AddFlags,
+) {
+  let target = flags.target;
+  if (!target) {
+    if (flags.yes) {
+      target = 'compose';
+    } else {
+      const answer = await p.select({
+        message: 'What should be generated?',
+        options: [
+          { value: 'compose', label: 'Docker Compose', hint: 'run the whole stack locally' },
+          { value: 'k8s', label: 'Kubernetes manifests', hint: 'Deployment + Service per app' },
+          { value: 'both', label: 'Both' },
+        ],
+        initialValue: 'compose',
+      });
+      if (p.isCancel(answer)) cancel('Operation cancelled.', 0);
+      target = deployTargetSchema.parse(answer);
+    }
+  }
+
+  const s = p.spinner();
+  s.start('Generating container manifests…');
+  try {
+    await generateDocker(config, rootDir, manifest, target);
+    await updateManifest(rootDir, (m) => {
+      m.modules = [...new Set([...m.modules, 'docker'])];
+      return m;
+    });
+    const count = Object.keys(manifest.services).length + 1;
+    s.stop(t.success(`${glyph.tick} Dockerfiles written for ${count} workspace(s).`));
+  } catch (err) {
+    s.stop(t.error(`${glyph.cross} Failed to generate container manifests.`));
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+
+  const notes = [
+    commandBlock([{ cmd: 'docker compose up --build', note: 'start the whole stack' }]),
+  ];
+  if (target !== 'compose') {
+    notes.push(
+      '',
+      t.muted('Kubernetes manifests are in infra/k8s/ — update the image registry'),
+      t.muted('and create the secrets they reference before applying.'),
+    );
+  }
+  if (config.framework === 'next') {
+    notes.push(
+      '',
+      t.warn("The Next Dockerfile expects output: 'standalone' in next.config.ts."),
+    );
+  }
+
+  p.note(notes.join('\n'), 'Next steps');
+  p.outro(t.success('Done.'));
 }
 
 async function runInstall(rootDir: string, wanted: boolean) {
@@ -322,9 +590,9 @@ async function runInstall(rootDir: string, wanted: boolean) {
   spinner.start('Installing dependencies…');
   try {
     await install(rootDir);
-    spinner.stop(pc.green('Dependencies installed.'));
+    spinner.stop(t.success('Dependencies installed.'));
   } catch (err) {
-    spinner.stop(pc.yellow('Install failed — run `pnpm install` yourself.'));
+    spinner.stop(t.warn('Install failed — run `pnpm install` yourself.'));
     console.error(err);
   }
 }

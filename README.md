@@ -2,7 +2,7 @@
 
 > Monorepo Development Platform CLI
 
-Scaffolds production-ready TypeScript monorepos on **pnpm workspaces** + **Turborepo** — web, mobile, polyglot backend services, and SEO.
+Scaffolds production-ready TypeScript monorepos on **pnpm workspaces** + **Turborepo** — web, mobile, polyglot services, database, auth screens, containers and SEO.
 
 ```bash
 npx xocket create my-project
@@ -17,72 +17,80 @@ npx xocket create my-project
 # Non-interactive — every question has a flag
 npx xocket create my-project --yes -f next -s zustand -b supabase --ai-seo
 
-# Global install
-npm install -g xocket
-xocket create my-project
+# From an org preset
+npx xocket create my-project --template ./team-preset.json --yes
 ```
 
 ## What you get
 
 | | |
 |---|---|
-| **Monorepo** | pnpm workspaces + Turborepo, shared `typescript-config` / `eslint-config` / `prettier-config` packages |
+| **Monorepo** | pnpm workspaces + Turborepo; shared `typescript-config`, `eslint-config`, `prettier-config` and `ui` packages |
 | **Web** | React 19 (Vite 8) or Next.js 16 App Router |
-| **Styling** | Tailwind CSS v4 (CSS-first) + shadcn/ui with the full design-token layer wired up |
+| **Styling** | Tailwind CSS v4 (CSS-first) + shadcn/ui, design tokens wired up |
 | **State** | Zustand · React Context · Redux Toolkit · none |
 | **Server state** | TanStack Query v5 · none |
-| **Backend / auth** | Supabase (SSR split on Next) · AWS Cognito (Amplify v6) · custom API · none |
-| **Observability** | Sentry v10, via the `instrumentation` hooks |
+| **Backend / auth** | Supabase (SSR split on Next) · AWS Cognito · custom API · none |
+| **Testing** | Vitest + Testing Library, with a passing test from the first commit |
+| **Observability** | Sentry v10 instrumentation hooks |
 | **Quality** | ESLint 9 flat config, Prettier, Husky, lint-staged |
-| **Environments** | development · staging · production |
-
-Optional, via prompt or flag:
-
-- **SEO** — canonical URLs, Open Graph, generated OG image, `sitemap.xml`, `robots.txt`, schema.org JSON-LD builders
-- **AEO** — `llms.txt` / `llms-full.txt`, an explicit AI-crawler allowlist, cache headers
+| **CI** | a GitHub Actions workflow and grouped Dependabot config |
 
 ## Commands
 
 ### `xocket create [name]`
 
-| Flag | Values | Notes |
-|---|---|---|
-| `-f, --framework` | `react` \| `next` | |
-| `-s, --state` | `zustand` \| `context` \| `redux` \| `none` | |
-| `--server-state` | `tanstack` \| `none` | |
-| `-b, --backend` | `supabase` \| `cognito` \| `custom` \| `none` | |
-| `--seo` / `--no-seo` | | sitemap, robots, Open Graph, JSON-LD |
-| `--ai-seo` / `--no-ai-seo` | | answer-engine optimisation; implies `--seo` |
-| `-y, --yes` | | use defaults for anything not passed |
-| `--no-install` | | skip `pnpm install` |
-| `--no-git` | | skip `git init` and the initial commit |
+| Flag | Values |
+|---|---|
+| `-f, --framework` | `react` \| `next` |
+| `-s, --state` | `zustand` \| `context` \| `redux` \| `none` |
+| `--server-state` | `tanstack` \| `none` |
+| `-b, --backend` | `supabase` \| `cognito` \| `custom` \| `none` |
+| `--seo` / `--no-seo` | sitemap, robots, Open Graph, JSON-LD |
+| `--ai-seo` / `--no-ai-seo` | answer-engine optimisation; implies `--seo` |
+| `-t, --template <source>` | org preset — a local `.json` path or an `https` URL |
+| `-y, --yes` | use defaults for anything not passed |
+| `--no-install` / `--no-git` | skip install / git |
 
-Anything you pass as a flag is not prompted for. `--yes` answers the rest with
-defaults, which is what makes the CLI usable from CI, scripts and coding agents.
+Anything passed as a flag is not prompted for. `--yes` answers the rest with defaults, which is what makes the CLI usable from CI, scripts and coding agents.
 
 ### `xocket add <module>`
 
+| Module | What it adds |
+|---|---|
+| `expo` | Expo 57 app mirroring the web stack |
+| `backend` | a service in TypeScript, Go, Rust or Python |
+| `db` | Drizzle or Prisma in `packages/db`, shared workspace-wide |
+| `auth-ui` | sign-in / sign-up screens wired to your backend |
+| `seo` | sitemap, robots, Open Graph, JSON-LD, `llms.txt` |
+| `agent` | an MCP server exposing this project to assistants |
+| `docker` | Dockerfiles, Compose and Kubernetes manifests |
+
 ```bash
-xocket add expo                              # Expo 57 app, mirroring the web stack
-xocket add backend --lang go --name orders   # Go · Rust · Python · TypeScript service
-xocket add seo                               # add SEO/AEO to an existing project
+xocket add expo
+xocket add backend --lang go --name orders-api
+xocket add db --orm drizzle
+xocket add auth-ui
+xocket add agent --name my-mcp
+xocket add docker --target both
 ```
 
-| Flag | Values |
-|---|---|
-| `-l, --lang` | `node` \| `go` \| `rust` \| `python` |
-| `-n, --name` | service name (backend only) |
-| `-y, --yes` | accept defaults |
-| `--no-install` | skip `pnpm install` |
+### `xocket doctor`
+
+Checks an existing project against the current generator and reports what drifted, with a fix for each finding. Exits non-zero on errors, so it works in CI.
+
+```
+✗ error  Shared tsconfig declares include/baseUrl/paths
+        TypeScript resolves those against packages/typescript-config, not your
+        app, so `tsc` finds no files (TS18003).
+        fix: Move include/exclude/paths into apps/*/tsconfig.json.
+```
 
 ## Polyglot services
 
-`xocket add backend` puts a service under `services/<name>` with a small
-`package.json` whose scripts shell out to the native toolchain. Turborepo then
-treats Go, Rust and Python exactly like a JS package — same `pnpm dev`, same
-`pnpm build`, same caching.
+`xocket add backend` puts a service under `services/<name>` with a small `package.json` whose scripts shell out to the native toolchain. Turborepo then treats Go, Rust and Python exactly like a JS package — same `pnpm dev`, same `pnpm build`, same caching.
 
-| Language | Stack | Toolchain you need | Port |
+| Language | Stack | Needs | Port |
 |---|---|---|---|
 | `node` | Hono + tsup | — | 3001 |
 | `go` | net/http | Go 1.22+ | 3002 |
@@ -91,19 +99,60 @@ treats Go, Rust and Python exactly like a JS package — same `pnpm dev`, same
 
 Each exposes `GET /health`.
 
+## Org presets
+
+A preset pins the choices your team always makes, so nobody answers the same six questions again. Every field is optional.
+
+```json
+{
+  "name": "OceanLab standard",
+  "framework": "next",
+  "backend": "supabase",
+  "seo": true,
+  "aiSeo": true,
+  "modules": [
+    { "module": "db", "orm": "drizzle" },
+    { "module": "backend", "lang": "go", "name": "orders-api" },
+    "auth-ui",
+    { "module": "docker", "target": "both" }
+  ]
+}
+```
+
+```bash
+xocket create my-app --template ./oceanlab.json --yes
+xocket create my-app --template https://example.com/preset.json --yes
+```
+
+Precedence is **flag → preset → prompt → default**. Presets load over `https` only.
+
+## SEO and AEO
+
+`--seo` generates `src/lib/seo.ts` — one file holding site name, description, canonical URL and social handles — plus JSON-LD builders (`organizationJsonLd`, `websiteJsonLd`, `breadcrumbsJsonLd`, `articleJsonLd`, `faqJsonLd`).
+
+On Next.js that drives `robots.ts`, `sitemap.ts`, a build-time `opengraph-image.tsx`, and the root layout's metadata.
+
+`--ai-seo` adds answer-engine optimisation on top: `llms.txt`, `llms-full.txt`, cache headers, and an explicit allowlist for GPTBot, ClaudeBot, PerplexityBot, OAI-SearchBot, Google-Extended and others.
+
+> **On a Vite SPA, `--seo` can only do so much.** Metadata applied in the browser is invisible to crawlers that don't run JavaScript — which is most answer-engine crawlers. Generated projects get a `SEO.md` explaining the three real options (move to Next, prerender at build time, or prerender at the edge).
+
 ## Generated layout
 
 ```
 my-project/
 ├── apps/
 │   ├── web/                 # React (Vite) or Next.js
-│   └── expo/                # after `xocket add expo`
-├── services/                # after `xocket add backend`
-│   └── orders/
+│   └── expo/                # xocket add expo
+├── services/                # xocket add backend | agent
+│   └── orders-api/
 ├── packages/
+│   ├── ui/                  # shared components + design tokens
+│   ├── db/                  # xocket add db
 │   ├── typescript-config/
 │   ├── eslint-config/
 │   └── prettier-config/
+├── infra/k8s/               # xocket add docker --target k8s
+├── docker-compose.yml
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── .xocket/config.json      # project manifest
@@ -122,13 +171,11 @@ my-project/
 ```bash
 pnpm install
 pnpm build
-pnpm test          # unit + generator regression tests
-pnpm dev -- create demo --yes    # run from source
+pnpm test                          # 92 unit + generator regression tests
+node dist/index.js create demo --yes --no-install --no-git
 ```
 
-CI scaffolds a real project for every framework × state × backend combination,
-then runs `lint`, `type-check` and `build` against it — plus Expo and all four
-backend languages. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
+CI scaffolds a real project for every framework × state × backend combination and runs `lint`, `type-check` and `build` against it, plus separate jobs for Expo, each backend language, each optional module, and a full-stack preset that also builds the generated Dockerfiles. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 ## License
 

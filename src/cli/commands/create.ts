@@ -1,13 +1,15 @@
 import * as p from '@clack/prompts';
-import pc from 'picocolors';
-import ora from 'ora';
 import fs from 'fs-extra';
 
 import { collectCreateAnswers } from '../prompts/create.prompts.js';
 import { buildConfig } from '../config.js';
 import { createFlagsSchema, formatZodError, type CreateFlags } from '../../schema.js';
-import { BANNER } from '../../version.js';
+import { banner } from '../../ui/banner.js';
+import { Steps } from '../../ui/steps.js';
+import { t, glyph } from '../../ui/theme.js';
 import { preflight, hasGit } from '../../utils/preflight.js';
+import { loadPreset, presetModules } from '../../utils/preset.js';
+import { applyPresetModules } from './apply-modules.js';
 
 // Monorepo generators
 import { generateWorkspace } from '../../generators/monorepo/workspace.js';
@@ -34,6 +36,9 @@ import { generateAuthentication } from '../../generators/authentication.js';
 import { generateSentry } from '../../generators/sentry.js';
 import { generateSeo } from '../../generators/seo/index.js';
 import { generateRootFile } from '../../generators/wiring.js';
+import { generateUiPackage } from '../../generators/packages/ui.js';
+import { generateTesting } from '../../generators/testing.js';
+import { generateCiWorkflow } from '../../generators/ci.js';
 
 // Root / shared generators
 import { generateEslint } from '../../generators/eslint.js';
@@ -47,11 +52,12 @@ import { install, formatProject } from '../../utils/pm.js';
 import { printSummary, buildConfiguredList } from '../../utils/log.js';
 
 export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
-  p.intro(pc.bgCyan(pc.black(BANNER)));
+  console.log(banner());
+  console.log();
 
   const flagCheck = createFlagsSchema.safeParse(rawFlags);
   if (!flagCheck.success) {
-    p.cancel(pc.red(`Invalid options:\n${formatZodError(flagCheck.error)}`));
+    p.cancel(t.error(`Invalid options:\n${formatZodError(flagCheck.error)}`));
     process.exit(1);
   }
   const flags = flagCheck.data;
@@ -61,39 +67,67 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
 
   // Fail before touching the filesystem, not halfway through generation.
   const checks = await preflight({ needsInstall: wantsInstall, needsGit: wantsGit });
-  for (const warning of checks.warnings) p.log.warn(pc.yellow(warning));
+  for (const warning of checks.warnings) {
+    console.log(`${t.warn(glyph.warn)} ${t.muted(warning)}`);
+  }
   if (!checks.ok) {
-    p.cancel(pc.red(checks.errors.join('\n\n')));
+    p.cancel(t.error(checks.errors.join('\n\n')));
     process.exit(1);
   }
 
-  const answers = await collectCreateAnswers(flags);
+  // An org preset supplies defaults for anything not passed as a flag.
+  let preset = undefined;
+  if (flags.template) {
+    try {
+      preset = await loadPreset(flags.template);
+      console.log(
+        `${t.success(glyph.tick)} ${t.muted(`Preset loaded${preset.name ? `: ${preset.name}` : ''}`)}`,
+      );
+      console.log();
+    } catch (err) {
+      p.cancel(t.error(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+  }
+
+  const answers = await collectCreateAnswers(flags, {
+    framework: preset?.framework,
+    stateManagement: preset?.stateManagement,
+    serverState: preset?.serverState,
+    backend: preset?.backend,
+    seo: preset?.seo,
+    aiSeo: preset?.aiSeo,
+  });
   const config = buildConfig(answers);
 
   if (fs.existsSync(config.rootDir)) {
     p.cancel(
-      pc.red(`Directory '${config.projectName}' already exists. Choose a different name.`),
+      t.error(`Directory '${config.projectName}' already exists. Choose a different name.`),
     );
     process.exit(1);
   }
 
   const gitAvailable = wantsGit && (await hasGit());
-  const s = p.spinner();
-  s.start('Scaffolding monorepo…');
+
+  // Phases are counted so the user can see where they are, and where a
+  // failure happened — previously ~20 generators ran behind one spinner.
+  const phases = 4 + (gitAvailable ? 2 : 0) + (wantsInstall ? 2 : 0);
+  const steps = new Steps(phases);
 
   try {
-    // ── Monorepo root ─────────────────────────────────────────────────────
+    steps.start('Monorepo root');
     await generateWorkspace(config);
     await generateTurbo(config);
     await generateRootGitignore(config);
     await generateReadme(config);
 
-    // ── Shared packages ───────────────────────────────────────────────────
+    steps.start('Shared packages');
     await generateTypescriptConfig(config);
     await generateEslintConfig(config);
     await generatePrettierConfig(config);
+    await generateUiPackage(config);
 
-    // ── Web app (apps/web) ────────────────────────────────────────────────
+    steps.start(`Web app ${t.muted(`(${config.framework})`)}`);
     await generateProject(config);
     await generateTypescript(config);
     await generateStyling(config);
@@ -104,60 +138,56 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
     await generateEnvironment(config);
     await generateAuthentication(config, config.webDir);
     await generateSentry(config);
-    // SEO writes src/lib/seo.ts, which wiring imports — must run first.
+    await generateTesting(config, config.webDir);
+    // SEO writes src/lib/seo.ts, which the layout imports — must run first.
     await generateSeo(config);
     await generateRootFile(config);
 
-    // ── Root-level quality tooling ────────────────────────────────────────
+    steps.start('Tooling');
     await generateEslint(config);
     await generateRootEslint(config);
     await generatePrettier(config);
     await generateHusky(config);
-
+    await generateCiWorkflow(config);
     await writeManifest(config.rootDir, createManifest(config));
-
-    s.stop(pc.green('✓ Project files generated.'));
 
     // git init runs before install so husky's prepare script has a repo.
     if (gitAvailable) {
-      const spinner = ora('Initialising git repository…').start();
+      steps.start('Git repository');
       await gitInit(config);
-      spinner.succeed(pc.green('Git repository initialised.'));
     }
 
     if (wantsInstall) {
-      const spinner = ora('Installing dependencies via pnpm… (this may take a minute)').start();
+      steps.start(`Installing dependencies ${t.muted('(this takes a minute)')}`);
       await install(config.rootDir);
-      spinner.succeed(pc.green('Dependencies installed.'));
-    }
 
-    // Formatting needs the installed Prettier, and must precede the commit so
-    // the pre-commit hook has nothing to reformat later.
-    if (wantsInstall) {
-      const spinner = ora('Formatting…').start();
-      const ok = await formatProject(config.rootDir);
-      if (ok) spinner.succeed(pc.green('Formatted.'));
-      else spinner.warn(pc.yellow('Could not format — run `pnpm format` yourself.'));
+      steps.start('Formatting');
+      await formatProject(config.rootDir);
     }
 
     if (gitAvailable) {
-      const spinner = ora('Creating initial commit…').start();
+      steps.start('Initial commit');
       await gitCommit(config);
-      spinner.succeed(pc.green('Initial commit created.'));
     }
 
-    printSummary(config, buildConfiguredList(config), {
-      installed: wantsInstall,
-    });
+    steps.succeed();
+
+    // Modules the preset asked for, applied to the finished project.
+    if (preset && preset.modules.length > 0) {
+      await applyPresetModules(config, presetModules(preset), { install: wantsInstall });
+    }
+
+    printSummary(config, buildConfiguredList(config), { installed: wantsInstall });
   } catch (err) {
-    s.stop(pc.red('✗ Scaffolding failed.'));
-    console.error(err);
+    steps.fail('Scaffolding failed.');
+    console.error();
+    console.error(err instanceof Error ? t.error(err.message) : err);
 
     // Only ever remove a directory this run created — the existsSync guard
     // above guarantees it did not exist beforehand.
     if (fs.existsSync(config.rootDir)) {
       await fs.remove(config.rootDir);
-      console.error(pc.dim(`Cleaned up: ${config.projectName}/`));
+      console.error(t.muted(`Cleaned up ${config.projectName}/`));
     }
     process.exit(1);
   }

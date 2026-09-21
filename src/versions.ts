@@ -85,6 +85,27 @@ export const DEPS = {
   tsup: '^8.5.1',
   tsx: '^4.20.6',
   '@types/node': '^26.6.2',
+  // ── Testing ───────────────────────────────────────────────────────────────
+  vitest: '^5.0.1',
+  '@vitest/coverage-v8': '^5.0.1',
+  '@testing-library/react': '^16.3.3',
+  '@testing-library/jest-dom': '^7.0.1',
+  '@testing-library/user-event': '^14.6.7',
+  jsdom: '^30.1.0',
+
+  // ── Forms ─────────────────────────────────────────────────────────────────
+  'react-hook-form': '^7.88.0',
+  '@hookform/resolvers': '^5.9.1',
+
+  // ── Database ──────────────────────────────────────────────────────────────
+  'drizzle-orm': '^0.45.2',
+  'drizzle-kit': '^0.31.10',
+  postgres: '^3.4.9',
+  '@prisma/client': '^7.10.0',
+  prisma: '^7.10.0',
+
+  // ── MCP ───────────────────────────────────────────────────────────────────
+  '@modelcontextprotocol/sdk': '^1.30.0',
   zod: '^4.6.5',
 } as const;
 
