@@ -3,71 +3,66 @@ import path from 'path';
 import fs from 'fs-extra';
 import { readPkg, writePkg, addDevDeps } from '../utils/pkg.js';
 import { writeFile } from '../utils/file.js';
+import { deps } from '../versions.js';
+import { SHADCN_THEME_CSS } from './web/theme.js';
 
 /**
- * Configures Tailwind CSS for apps/web. Always runs — Tailwind is a default.
+ * Configures Tailwind CSS v4 for apps/web.
+ *
+ * v4 is CSS-first: there is no tailwind.config.js, no PostCSS plugin chain for
+ * Vite, and no autoprefixer (it is built in). Content paths are auto-detected,
+ * so the previous `content: [...]` globs are gone too.
+ *
+ * The old generator emitted a `tailwind.config.js` containing a top-level
+ * `await import('tailwindcss-animate')`; Tailwind's config loader transpiles to
+ * CJS, so that file threw "Unexpected identifier 'Promise'" and no styles were
+ * ever produced.
  */
 export async function generateStyling(config: Config) {
   const { framework, webDir } = config;
 
   let pkg = await readPkg(webDir);
-  pkg = addDevDeps(pkg, {
-    tailwindcss: '^3.4.10',
-    postcss: '^8.4.45',
-    autoprefixer: '^10.4.20',
-  });
+
+  if (framework === 'react') {
+    // The Vite plugin replaces the whole postcss pipeline.
+    pkg = addDevDeps(pkg, deps('tailwindcss', '@tailwindcss/vite'));
+  } else {
+    // Next still goes through PostCSS, but with a single plugin.
+    pkg = addDevDeps(pkg, deps('tailwindcss', '@tailwindcss/postcss'));
+  }
+  pkg = addDevDeps(pkg, deps('tw-animate-css'));
   await writePkg(webDir, pkg);
 
-  // tailwind.config.js — content paths differ by framework
-  const contentPaths =
-    framework === 'next'
-      ? `'./src/app/**/*.{ts,tsx,mdx}',\n    './src/components/**/*.{ts,tsx}'`
-      : `'./index.html',\n    './src/**/*.{ts,tsx}'`;
-
-  await writeFile(
-    path.join(webDir, 'tailwind.config.js'),
-    `/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    ${contentPaths},
-  ],
-  theme: {
-    extend: {
-      // shadcn/ui design tokens — populated when you add components
-    },
-  },
-  plugins: [
-    // tailwindcss-animate is installed for shadcn animations
-    (await import('tailwindcss-animate')).default,
-  ],
-}
-`,
-  );
-
-  // postcss.config.js
-  await writeFile(
-    path.join(webDir, 'postcss.config.js'),
-    `export default {
+  if (framework === 'next') {
+    await writeFile(
+      path.join(webDir, 'postcss.config.mjs'),
+      `/** @type {import('postcss-load-config').Config} */
+const config = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    '@tailwindcss/postcss': {},
   },
 }
-`,
-  );
 
-  // Inject @tailwind directives into the existing global CSS file
+export default config
+`,
+    );
+  } else {
+    // Vite handles Tailwind through the plugin; a stray postcss config would
+    // only re-run the pipeline.
+    const stale = path.join(webDir, 'postcss.config.js');
+    if (await fs.pathExists(stale)) await fs.remove(stale);
+  }
+
+  // Remove any v3-era config a previous scaffold left behind.
+  for (const stale of ['tailwind.config.js', 'tailwind.config.ts']) {
+    const f = path.join(webDir, stale);
+    if (await fs.pathExists(f)) await fs.remove(f);
+  }
+
   const cssFile =
     framework === 'next'
       ? path.join(webDir, 'src', 'app', 'globals.css')
       : path.join(webDir, 'src', 'index.css');
 
-  const tailwindDirectives = `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n`;
-  const existing = (await fs.pathExists(cssFile))
-    ? await fs.readFile(cssFile, 'utf-8')
-    : '';
-  // Only prepend if directives are not already present
-  if (!existing.includes('@tailwind base')) {
-    await fs.writeFile(cssFile, tailwindDirectives + '\n' + existing, 'utf-8');
-  }
+  await writeFile(cssFile, SHADCN_THEME_CSS);
 }

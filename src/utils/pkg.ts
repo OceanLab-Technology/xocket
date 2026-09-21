@@ -25,8 +25,7 @@ export function addScript(pkg: any, name: string, cmd: string): any {
 }
 
 export function setField(pkg: any, key: string, value: any): any {
-  pkg[key] = typeof value === 'object' && !Array.isArray(value)
-    ? { ...(pkg[key] || {}), ...value }
-    : value;
+  pkg[key] =
+    typeof value === 'object' && !Array.isArray(value) ? { ...(pkg[key] || {}), ...value } : value;
   return pkg;
 }

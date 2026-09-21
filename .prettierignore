@@ -1,0 +1,7 @@
+dist
+node_modules
+coverage
+pnpm-lock.yaml
+# Templates are copied verbatim into generated projects; those projects format
+# themselves with their own Prettier config, which differs from this one.
+templates

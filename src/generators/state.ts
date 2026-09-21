@@ -1,6 +1,7 @@
 import type { Config } from '../types.js';
 import path from 'path';
 import { readPkg, writePkg, addDeps } from '../utils/pkg.js';
+import { deps } from '../versions.js';
 import { writeFile, ensureDir } from '../utils/file.js';
 
 /**
@@ -24,7 +25,7 @@ export async function generateState(config: Config, targetDir: string) {
 
 async function generateZustand(webDir: string) {
   let pkg = await readPkg(webDir);
-  pkg = addDeps(pkg, { zustand: '^4.5.4' });
+  pkg = addDeps(pkg, deps('zustand'));
   await writePkg(webDir, pkg);
 
   const storeDir = path.join(webDir, 'src', 'store');
@@ -92,10 +93,7 @@ export function useApp(): AppContextValue {
 
 async function generateRedux(webDir: string) {
   let pkg = await readPkg(webDir);
-  pkg = addDeps(pkg, {
-    '@reduxjs/toolkit': '^2.2.7',
-    'react-redux': '^9.1.2',
-  });
+  pkg = addDeps(pkg, deps('@reduxjs/toolkit', 'react-redux'));
   await writePkg(webDir, pkg);
 
   const storeDir = path.join(webDir, 'src', 'store');

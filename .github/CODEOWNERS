@@ -1,0 +1,7 @@
+# Default owners for everything.
+*                       @OceanLab-Technology/maintainers
+
+# These encode invariants that a past bug taught us; changes want a close read.
+/src/versions.ts        @OceanLab-Technology/maintainers
+/src/schema.ts          @OceanLab-Technology/maintainers
+/.github/workflows/     @OceanLab-Technology/maintainers

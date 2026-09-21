@@ -3,15 +3,16 @@ import path from 'path';
 import { writeFile, ensureDir } from '../../utils/file.js';
 
 /**
- * Generates packages/prettier-config/ with:
- *   package.json
- *   index.js     — the shared Prettier config object
+ * Generates packages/prettier-config/.
+ *
+ * index.js uses `export default`, so the package must declare
+ * `"type": "module"` — without it Node parsed the file as CommonJS and
+ * resolving the config threw on older Node releases.
  */
 export async function generatePrettierConfig(config: Config) {
   const pkgDir = path.join(config.rootDir, 'packages', 'prettier-config');
   await ensureDir(pkgDir);
 
-  // package.json
   await writeFile(
     path.join(pkgDir, 'package.json'),
     JSON.stringify(
@@ -19,20 +20,20 @@ export async function generatePrettierConfig(config: Config) {
         name: '@xocket/prettier-config',
         version: '0.0.0',
         private: true,
+        type: 'module',
         main: 'index.js',
-        // This allows "prettier": "@xocket/prettier-config" in any package.json
-        prettier: './index.js',
+        exports: { '.': './index.js' },
+        files: ['index.js'],
       },
       null,
       2,
     ) + '\n',
   );
 
-  // index.js — the actual config
   await writeFile(
     path.join(pkgDir, 'index.js'),
     `/** @type {import('prettier').Config} */
-const config = {
+export default {
   singleQuote: true,
   trailingComma: 'all',
   printWidth: 100,
@@ -40,8 +41,6 @@ const config = {
   tabWidth: 2,
   useTabs: false,
 }
-
-export default config
 `,
   );
 }

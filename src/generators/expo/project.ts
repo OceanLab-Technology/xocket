@@ -1,68 +1,87 @@
 import type { Config } from '../../types.js';
 import fs from 'fs-extra';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { readPkg, writePkg } from '../../utils/pkg.js';
 import { writeFile } from '../../utils/file.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { templateDir, TEMPLATE_COPY_FILTER } from '../project.js';
+import { DEPS } from '../../versions.js';
 
 /**
- * Copies the expo template to apps/expo and sets up the package.json.
+ * Copies the Expo template into apps/expo and normalises its package.json.
  */
-export async function generateProject(config: Config, targetDir: string) {
+export async function generateExpoProject(config: Config, targetDir: string) {
   const { projectName } = config;
-  const templateDir = path.resolve(__dirname, '../../../templates', 'expo');
 
-  await fs.copy(templateDir, targetDir, {
-    filter: (src) => !src.includes('node_modules') && !src.endsWith('package-lock.json') && !src.endsWith('.DS_Store'),
-  });
+  await fs.copy(templateDir('expo'), targetDir, { filter: TEMPLATE_COPY_FILTER });
+
+  // app.json carries the project's own name/slug/scheme.
+  const appJsonPath = path.join(targetDir, 'app.json');
+  const appJson = await fs.readJson(appJsonPath);
+  appJson.expo.name = projectName;
+  appJson.expo.slug = projectName;
+  appJson.expo.scheme = projectName.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'app';
+  await fs.writeJson(appJsonPath, appJson, { spaces: 2 });
 
   await writeFile(
     path.join(targetDir, 'tsconfig.json'),
     JSON.stringify(
       {
-        extends: ['expo/tsconfig.base', '@xocket/typescript-config/base.json'],
+        extends: ['expo/tsconfig.base', '@xocket/typescript-config/native.json'],
         compilerOptions: {
-          jsx: 'react-native',
+          paths: { '@/*': ['./src/*'] },
         },
+        include: [
+          '**/*.ts',
+          '**/*.tsx',
+          '.expo/types/**/*.ts',
+          'expo-env.d.ts',
+          'nativewind-env.d.ts',
+        ],
+        exclude: ['node_modules'],
       },
       null,
       2,
     ) + '\n',
   );
 
-  let pkg = await readPkg(targetDir);
+  const pkg = await readPkg(targetDir);
   pkg.name = `@${projectName}/expo`;
   pkg.version = '0.0.0';
   pkg.private = true;
   pkg.main = 'expo-router/entry';
 
-  // Workspace references to shared packages
   pkg.devDependencies = {
-    ...(pkg.devDependencies || {}),
+    ...(pkg.devDependencies ?? {}),
     '@xocket/typescript-config': 'workspace:*',
     '@xocket/eslint-config': 'workspace:*',
     '@xocket/prettier-config': 'workspace:*',
-    typescript: '^5.3.3',
-    '@types/react': '~18.2.79',
+    typescript: DEPS.typescript,
+    '@types/react': DEPS['@types/react'],
+    eslint: DEPS.eslint,
   };
 
-  // Standard scripts
   pkg.scripts = {
-    ...(pkg.scripts || {}),
-    start: 'expo start',
-    android: 'expo run:android',
-    ios: 'expo run:ios',
-    web: 'expo start --web',
-    lint: 'eslint . --ext .ts,.tsx',
+    ...(pkg.scripts ?? {}),
+    lint: 'eslint .',
     'type-check': 'tsc --noEmit',
     format: 'prettier --write .',
     'format:check': 'prettier --check .',
   };
 
-  // Prettier config reference
   pkg.prettier = '@xocket/prettier-config';
 
   await writePkg(targetDir, pkg);
+
+  // The Expo app previously got a `lint` script but no ESLint config at all,
+  // so `turbo lint` failed at the root.
+  await writeFile(
+    path.join(targetDir, 'eslint.config.js'),
+    `import nativeConfig from '@xocket/eslint-config/native.js'
+
+export default [
+  { ignores: ['.expo/**', 'expo-env.d.ts', 'nativewind-env.d.ts'] },
+  ...nativeConfig,
+]
+`,
+  );
 }

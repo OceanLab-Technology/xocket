@@ -1,0 +1,373 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Stops Turbo from trying to talk to a remote cache in forks.
+  TURBO_TELEMETRY_DISABLED: 1
+  DO_NOT_TRACK: 1
+
+jobs:
+  # ── Fast feedback: does the CLI itself build and pass its unit tests? ──────
+  unit:
+    name: Build + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - run: pnpm build
+      - run: pnpm test
+
+      - name: Fail if the published package would omit templates
+        run: |
+          pnpm pack --pack-destination /tmp >/dev/null
+          tar -tzf /tmp/xocket-*.tgz | grep -q 'package/templates/react/package.json'
+          tar -tzf /tmp/xocket-*.tgz | grep -q 'package/templates/next/package.json'
+          tar -tzf /tmp/xocket-*.tgz | grep -q 'package/templates/expo/package.json'
+          tar -tzf /tmp/xocket-*.tgz | grep -q 'package/dist/index.js'
+
+  # ── The matrix that would have caught every bug in the 2.0.0 release. ──────
+  # Scaffolds a real project for each combination, then installs and runs the
+  # three commands that were broken: lint, type-check, build.
+  scaffold:
+    name: ${{ matrix.framework }} · ${{ matrix.state }} · ${{ matrix.backend }}${{ matrix.seo && ' · seo' || '' }}
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [react, next]
+        state: [zustand, redux, context, none]
+        backend: [supabase, cognito, custom, none]
+        seo: [false]
+        # Cover the SEO and AEO paths once per framework rather than across
+        # the whole matrix — they do not interact with state or backend.
+        include:
+          - framework: next
+            state: zustand
+            backend: supabase
+            seo: true
+            aiSeo: true
+          - framework: react
+            state: zustand
+            backend: supabase
+            seo: true
+            aiSeo: true
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Scaffold
+        run: |
+          FLAGS="--yes --no-git -f ${{ matrix.framework }} -s ${{ matrix.state }} -b ${{ matrix.backend }}"
+          if [ "${{ matrix.seo }}" = "true" ]; then
+            FLAGS="$FLAGS ${{ matrix.aiSeo == true && '--ai-seo' || '--seo' }}"
+          else
+            FLAGS="$FLAGS --no-seo"
+          fi
+          node "${{ github.workspace }}/dist/index.js" create ci-app $FLAGS
+        working-directory: ${{ runner.temp }}
+
+      - name: Lint
+        run: pnpm lint
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Type-check
+        run: pnpm type-check
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Build
+        run: pnpm build
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Assert SEO artifacts were produced
+        if: matrix.seo == true
+        run: |
+          set -eux
+          if [ "${{ matrix.framework }}" = "next" ]; then
+            test -f apps/web/.next/server/app/robots.txt.body
+            test -f apps/web/.next/server/app/sitemap.xml.body
+            test -f apps/web/.next/server/app/opengraph-image.body
+            grep -q 'GPTBot' apps/web/.next/server/app/robots.txt.body
+          else
+            test -f apps/web/dist/robots.txt
+            test -f apps/web/dist/sitemap.xml
+            grep -q 'GPTBot' apps/web/dist/robots.txt
+          fi
+          test -f apps/web/public/llms.txt
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Assert Tailwind emitted the design tokens
+        if: matrix.framework == 'react'
+        run: |
+          set -eux
+          CSS=$(find apps/web/dist/assets -name '*.css' | head -1)
+          # These classes are used by the starter page itself; if Tailwind
+          # fails to load its theme they silently vanish.
+          grep -q 'bg-background' "$CSS"
+          grep -q -- '--muted-foreground:' "$CSS"
+        working-directory: ${{ runner.temp }}/ci-app
+
+  # ── Expo, and the polyglot services, each need their own toolchains. ──────
+  expo:
+    name: add expo
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [react, next]
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Scaffold + add expo
+        run: |
+          node ${{ github.workspace }}/dist/index.js create ci-app \
+            --yes --no-git -f ${{ matrix.framework }} -s zustand -b supabase --no-seo
+          cd ci-app
+          node ${{ github.workspace }}/dist/index.js add expo --yes
+        working-directory: ${{ runner.temp }}
+
+      - name: Type-check + lint the whole workspace
+        run: |
+          pnpm type-check
+          pnpm lint
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Expo must not inherit web env conventions
+        run: |
+          set -eux
+          grep -q 'EXPO_PUBLIC_API_URL' apps/expo/src/api/axios.ts
+          ! grep -q 'NEXT_PUBLIC_\|import.meta.env' apps/expo/src/api/axios.ts
+          ! grep -q 'import.meta.env' apps/expo/src/lib/supabase/browser.ts
+        working-directory: ${{ runner.temp }}/ci-app
+
+  backend:
+    name: add backend (${{ matrix.lang }})
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        lang: [node, go, rust, python]
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-go@v7
+        if: matrix.lang == 'go'
+        with:
+          go-version: '1.24'
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.lang == 'rust'
+      - uses: astral-sh/setup-uv@v10.1.0
+        if: matrix.lang == 'python'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Scaffold + add service
+        run: |
+          node ${{ github.workspace }}/dist/index.js create ci-app \
+            --yes --no-git -f next -s zustand -b none --no-seo --no-install
+          cd ci-app
+          node ${{ github.workspace }}/dist/index.js add backend \
+            --lang ${{ matrix.lang }} --name svc --yes --no-install
+          pnpm install
+        working-directory: ${{ runner.temp }}
+
+      - name: Build the service through Turborepo
+        run: pnpm --filter svc build
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Service answers /health
+        run: |
+          set -eux
+          pnpm --filter svc start &
+          for i in $(seq 1 30); do
+            sleep 1
+            if curl -fsS "http://localhost:${{ matrix.lang == 'node' && 3001 || matrix.lang == 'go' && 3002 || matrix.lang == 'rust' && 3003 || 3004 }}/health"; then
+              exit 0
+            fi
+          done
+          echo "service never became healthy" >&2
+          exit 1
+        working-directory: ${{ runner.temp }}/ci-app
+
+  # ── The optional modules, each on a project that actually installs. ────────
+  modules:
+    name: add ${{ matrix.module }}
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: db
+            args: --orm drizzle
+            framework: next
+          - module: db
+            args: --orm prisma
+            framework: next
+          - module: auth-ui
+            args: ''
+            framework: next
+          - module: auth-ui
+            args: ''
+            framework: react
+          - module: agent
+            args: --name my-mcp
+            framework: next
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Scaffold + add module
+        run: |
+          node "${{ github.workspace }}/dist/index.js" create ci-app \
+            --yes --no-git -f ${{ matrix.framework }} -s zustand -b supabase --no-seo --no-install
+          cd ci-app
+          node "${{ github.workspace }}/dist/index.js" add ${{ matrix.module }} ${{ matrix.args }} --yes --no-install
+          pnpm install
+        working-directory: ${{ runner.temp }}
+
+      - name: Lint + type-check + build
+        run: |
+          pnpm lint
+          pnpm type-check
+          pnpm build
+        working-directory: ${{ runner.temp }}/ci-app
+
+  # ── An org preset must produce a workspace that still passes every gate. ──
+  preset:
+    name: preset (full stack)
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.24'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Write a preset exercising every module
+        run: |
+          cat > preset.json <<'JSON'
+          {
+            "name": "ci full stack",
+            "framework": "next",
+            "stateManagement": "zustand",
+            "serverState": "tanstack",
+            "backend": "supabase",
+            "seo": true,
+            "aiSeo": true,
+            "modules": [
+              { "module": "db", "orm": "drizzle" },
+              { "module": "backend", "lang": "go", "name": "orders-api" },
+              { "module": "agent", "name": "mcp" },
+              "auth-ui",
+              { "module": "docker", "target": "both" }
+            ]
+          }
+          JSON
+          node "${{ github.workspace }}/dist/index.js" create ci-app \
+            --template ./preset.json --yes --no-git
+        working-directory: ${{ runner.temp }}
+
+      - name: Every gate, across the whole workspace
+        run: |
+          pnpm lint
+          pnpm type-check
+          pnpm test
+          pnpm build
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Generated YAML must parse
+        run: |
+          set -eux
+          python3 -c "import yaml,sys; [list(yaml.safe_load_all(open(f))) for f in sys.argv[1:]]" \
+            docker-compose.yml .github/workflows/ci.yml .github/dependabot.yml infra/k8s/*.yaml
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: Generated Dockerfiles must build
+        run: |
+          set -eux
+          docker build -f services/orders-api/Dockerfile -t ci-go .
+          docker run --rm -d -p 3002:3002 --name ci-go ci-go
+          for i in $(seq 1 20); do
+            sleep 1
+            curl -fsS http://localhost:3002/health && break
+          done
+          docker rm -f ci-go
+        working-directory: ${{ runner.temp }}/ci-app
+
+      - name: doctor reports a clean bill of health
+        run: node "${{ github.workspace }}/dist/index.js" doctor
+        working-directory: ${{ runner.temp }}/ci-app

@@ -1,16 +1,22 @@
 import * as p from '@clack/prompts';
-import pc from 'picocolors';
-import ora from 'ora';
 import fs from 'fs-extra';
 
 import { collectCreateAnswers } from '../prompts/create.prompts.js';
 import { buildConfig } from '../config.js';
+import { createFlagsSchema, formatZodError, type CreateFlags } from '../../schema.js';
+import { banner } from '../../ui/banner.js';
+import { Steps } from '../../ui/steps.js';
+import { t, glyph } from '../../ui/theme.js';
+import { preflight, hasGit } from '../../utils/preflight.js';
+import { loadPreset, presetModules } from '../../utils/preset.js';
+import { applyPresetModules } from './apply-modules.js';
 
 // Monorepo generators
 import { generateWorkspace } from '../../generators/monorepo/workspace.js';
 import { generateTurbo } from '../../generators/monorepo/turbo.js';
 import { generateRootGitignore } from '../../generators/monorepo/gitignore.js';
 import { generateReadme } from '../../generators/monorepo/readme.js';
+import { generateRootEslint } from '../../generators/monorepo/root-eslint.js';
 
 // Shared package generators
 import { generateTypescriptConfig } from '../../generators/packages/typescript-config.js';
@@ -28,7 +34,11 @@ import { generateQuery } from '../../generators/query.js';
 import { generateEnvironment } from '../../generators/environment.js';
 import { generateAuthentication } from '../../generators/authentication.js';
 import { generateSentry } from '../../generators/sentry.js';
+import { generateSeo } from '../../generators/seo/index.js';
 import { generateRootFile } from '../../generators/wiring.js';
+import { generateUiPackage } from '../../generators/packages/ui.js';
+import { generateTesting } from '../../generators/testing.js';
+import { generateCiWorkflow } from '../../generators/ci.js';
 
 // Root / shared generators
 import { generateEslint } from '../../generators/eslint.js';
@@ -38,85 +48,150 @@ import { gitInit, gitCommit } from '../../generators/git.js';
 
 // Utilities
 import { writeManifest, createManifest } from '../../utils/manifest.js';
-import { install } from '../../utils/pm.js';
+import { install, formatProject } from '../../utils/pm.js';
 import { printSummary, buildConfiguredList } from '../../utils/log.js';
 
-export async function run({ name }: { name?: string } = {}) {
-  p.intro(pc.bgCyan(pc.black(' ✦  Xocket  v2.0.0 ')));
-  p.note('Monorepo Development Platform', 'New Project');
+export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
+  console.log(banner());
+  console.log();
 
-  // ── 1. Collect answers & build config ────────────────────────────────────────
-  const answers = await collectCreateAnswers({ initialName: name });
-  const config = buildConfig(answers);
+  const flagCheck = createFlagsSchema.safeParse(rawFlags);
+  if (!flagCheck.success) {
+    p.cancel(t.error(`Invalid options:\n${formatZodError(flagCheck.error)}`));
+    process.exit(1);
+  }
+  const flags = flagCheck.data;
 
-  if (fs.existsSync(config.rootDir)) {
-    p.cancel(pc.red(`Directory '${config.projectName}' already exists. Choose a different name.`));
+  const wantsInstall = flags.install !== false;
+  const wantsGit = flags.git !== false;
+
+  // Fail before touching the filesystem, not halfway through generation.
+  const checks = await preflight({ needsInstall: wantsInstall, needsGit: wantsGit });
+  for (const warning of checks.warnings) {
+    console.log(`${t.warn(glyph.warn)} ${t.muted(warning)}`);
+  }
+  if (!checks.ok) {
+    p.cancel(t.error(checks.errors.join('\n\n')));
     process.exit(1);
   }
 
-  const s = p.spinner();
-  s.start('Scaffolding monorepo…');
+  // An org preset supplies defaults for anything not passed as a flag.
+  let preset = undefined;
+  if (flags.template) {
+    try {
+      preset = await loadPreset(flags.template);
+      console.log(
+        `${t.success(glyph.tick)} ${t.muted(`Preset loaded${preset.name ? `: ${preset.name}` : ''}`)}`,
+      );
+      console.log();
+    } catch (err) {
+      p.cancel(t.error(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+  }
+
+  const answers = await collectCreateAnswers(flags, {
+    framework: preset?.framework,
+    stateManagement: preset?.stateManagement,
+    serverState: preset?.serverState,
+    backend: preset?.backend,
+    seo: preset?.seo,
+    aiSeo: preset?.aiSeo,
+  });
+  const config = buildConfig(answers);
+
+  if (fs.existsSync(config.rootDir)) {
+    p.cancel(t.error(`Directory '${config.projectName}' already exists. Choose a different name.`));
+    process.exit(1);
+  }
+
+  const gitAvailable = wantsGit && (await hasGit());
+
+  // Phases are counted so the user can see where they are, and where a
+  // failure happened — previously ~20 generators ran behind one spinner.
+  const presetEntries = preset ? presetModules(preset) : [];
+  const phases =
+    4 + (presetEntries.length > 0 ? 1 : 0) + (gitAvailable ? 2 : 0) + (wantsInstall ? 2 : 0);
+  const steps = new Steps(phases);
 
   try {
-    // ── Monorepo Root ─────────────────────────────────────────────────────────
-    await generateWorkspace(config);       // root package.json + pnpm-workspace.yaml
-    await generateTurbo(config);           // turbo.json
-    await generateRootGitignore(config);   // root .gitignore
-    await generateReadme(config);          // README.md
+    steps.start('Monorepo root');
+    await generateWorkspace(config);
+    await generateTurbo(config);
+    await generateRootGitignore(config);
+    await generateReadme(config);
 
-    // ── Shared Packages ───────────────────────────────────────────────────────
-    await generateTypescriptConfig(config);  // packages/typescript-config/
-    await generateEslintConfig(config);      // packages/eslint-config/
-    await generatePrettierConfig(config);    // packages/prettier-config/
+    steps.start('Shared packages');
+    await generateTypescriptConfig(config);
+    await generateEslintConfig(config);
+    await generatePrettierConfig(config);
+    await generateUiPackage(config);
 
-    // ── Web App (apps/web) ────────────────────────────────────────────────────
-    await generateProject(config);        // copy template → apps/web
-    await generateTypescript(config);     // tsconfig extending shared config
-    await generateStyling(config);        // Tailwind (always on)
-    await generateShadcn(config);         // shadcn/ui (always on)
-    await generateState(config, config.webDir);          // Zustand / Context / Redux / none
-    await generateApi(config, config.webDir);            // Axios (always on)
-    await generateQuery(config, config.webDir);          // TanStack Query (optional)
-    await generateEnvironment(config);    // .env.* files
-    await generateAuthentication(config, config.webDir); // Supabase / Cognito / Custom / none
-    await generateSentry(config);         // Sentry (always on)
-    await generateRootFile(config);       // wire providers → main.tsx / layout.tsx
+    steps.start(`Web app ${t.muted(`(${config.framework})`)}`);
+    await generateProject(config);
+    await generateTypescript(config);
+    await generateStyling(config);
+    await generateShadcn(config);
+    await generateState(config, config.webDir);
+    await generateApi(config, config.webDir);
+    await generateQuery(config, config.webDir);
+    await generateEnvironment(config);
+    await generateAuthentication(config, config.webDir);
+    await generateSentry(config);
+    await generateTesting(config, config.webDir);
+    // SEO writes src/lib/seo.ts, which the layout imports — must run first.
+    await generateSeo(config);
+    await generateRootFile(config);
 
-    // ── Root-Level Quality Tools ──────────────────────────────────────────────
-    await generateEslint(config);         // app-level eslint consuming shared config
-    await generatePrettier(config);       // root-level prettier
-    await generateHusky(config);          // root-level husky + lint-staged
-
-    // ── Manifest ──────────────────────────────────────────────────────────────
+    // Modules register themselves in the manifest, so it has to exist first.
     await writeManifest(config.rootDir, createManifest(config));
 
-    s.stop(pc.green('✓ Project files generated.'));
+    // Preset modules generate before install/format/commit so their output is
+    // formatted and committed like everything else.
+    if (presetEntries.length > 0) {
+      steps.start(`Preset modules ${t.muted(presetEntries.map((m) => m.module).join(', '))}`);
+      await applyPresetModules(config, presetEntries, steps);
+    }
 
-    // ── git init (before pnpm install so husky prepare runs) ─────────────────
-    const gitSpinner = ora('Initialising git repository…').start();
-    await gitInit(config);
-    gitSpinner.succeed(pc.green('Git repository initialised.'));
+    steps.start('Tooling');
+    await generateEslint(config);
+    await generateRootEslint(config);
+    await generatePrettier(config);
+    await generateHusky(config);
+    await generateCiWorkflow(config);
 
-    // ── pnpm install ──────────────────────────────────────────────────────────
-    const installSpinner = ora('Installing dependencies via pnpm… (this may take a minute)').start();
-    await install(config.rootDir);
-    installSpinner.succeed(pc.green('Dependencies installed.'));
+    // git init runs before install so husky's prepare script has a repo.
+    if (gitAvailable) {
+      steps.start('Git repository');
+      await gitInit(config);
+    }
 
-    // ── initial commit (--no-verify skips husky on scaffold commit) ──────────
-    const commitSpinner = ora('Creating initial commit…').start();
-    await gitCommit(config);
-    commitSpinner.succeed(pc.green('Initial commit created.'));
+    if (wantsInstall) {
+      steps.start(`Installing dependencies ${t.muted('(this takes a minute)')}`);
+      await install(config.rootDir);
 
-    // ── Summary ───────────────────────────────────────────────────────────────
-    const configured = buildConfiguredList(config);
-    printSummary(config, configured);
+      steps.start('Formatting');
+      await formatProject(config.rootDir);
+    }
 
+    if (gitAvailable) {
+      steps.start('Initial commit');
+      await gitCommit(config);
+    }
+
+    steps.succeed();
+
+    printSummary(config, buildConfiguredList(config), { installed: wantsInstall });
   } catch (err) {
-    s.stop(pc.red('✗ Scaffolding failed.'));
-    console.error(err);
+    steps.fail('Scaffolding failed.');
+    console.error();
+    console.error(err instanceof Error ? t.error(err.message) : err);
+
+    // Only ever remove a directory this run created — the existsSync guard
+    // above guarantees it did not exist beforehand.
     if (fs.existsSync(config.rootDir)) {
       await fs.remove(config.rootDir);
-      console.log(pc.dim(`Cleaned up: ${config.projectName}/`));
+      console.error(t.muted(`Cleaned up ${config.projectName}/`));
     }
     process.exit(1);
   }

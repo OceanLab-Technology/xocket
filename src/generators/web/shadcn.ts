@@ -1,68 +1,64 @@
 import type { Config } from '../../types.js';
 import path from 'path';
-import { readPkg, writePkg, addDeps, addDevDeps } from '../../utils/pkg.js';
+import { readPkg, writePkg, addDeps } from '../../utils/pkg.js';
 import { writeFile, ensureDir } from '../../utils/file.js';
+import { deps } from '../../versions.js';
 
 /**
- * Configures shadcn/ui for the web app:
- *   - Writes components.json
- *   - Generates src/lib/utils.ts  (the cn() helper)
- *   - Installs required runtime deps: clsx, tailwind-merge, class-variance-authority, lucide-react
- *   - Installs tailwindcss-animate devDep
+ * Configures shadcn/ui for the web app.
+ *
+ * Tailwind v4 form: `tailwind.config` is an empty string in components.json
+ * (there is no config file any more) and the design tokens live in the app's
+ * CSS entry point — see generators/web/theme.ts.
  */
 export async function generateShadcn(config: Config) {
   const { framework, webDir } = config;
 
   let pkg = await readPkg(webDir);
-  pkg = addDeps(pkg, {
-    clsx: '^2.1.1',
-    'tailwind-merge': '^2.5.2',
-    'class-variance-authority': '^0.7.0',
-    'lucide-react': '^0.439.0',
-  });
-  pkg = addDevDeps(pkg, {
-    'tailwindcss-animate': '^1.0.7',
-  });
+  pkg = addDeps(pkg, deps('clsx', 'tailwind-merge', 'class-variance-authority', 'lucide-react'));
   await writePkg(webDir, pkg);
 
-  // components.json — shadcn configuration
   const isNext = framework === 'next';
-  const componentsJson = {
-    $schema: 'https://ui.shadcn.com/schema.json',
-    style: 'default',
-    rsc: isNext,
-    tsx: true,
-    tailwind: {
-      config: 'tailwind.config.js',
-      css: isNext ? 'src/app/globals.css' : 'src/index.css',
-      baseColor: 'slate',
-      cssVariables: true,
-      prefix: '',
-    },
-    aliases: {
-      components: '@/components',
-      utils: '@/lib/utils',
-      ui: '@/components/ui',
-      lib: '@/lib',
-      hooks: '@/hooks',
-    },
-  };
 
   await writeFile(
     path.join(webDir, 'components.json'),
-    JSON.stringify(componentsJson, null, 2) + '\n',
+    JSON.stringify(
+      {
+        $schema: 'https://ui.shadcn.com/schema.json',
+        style: 'new-york',
+        rsc: isNext,
+        tsx: true,
+        tailwind: {
+          // Tailwind v4 has no config file; shadcn expects an empty string.
+          config: '',
+          css: isNext ? 'src/app/globals.css' : 'src/index.css',
+          baseColor: 'neutral',
+          cssVariables: true,
+          prefix: '',
+        },
+        iconLibrary: 'lucide',
+        aliases: {
+          components: '@/components',
+          utils: '@/lib/utils',
+          ui: '@/components/ui',
+          lib: '@/lib',
+          hooks: '@/hooks',
+        },
+      },
+      null,
+      2,
+    ) + '\n',
   );
 
-  // src/lib/utils.ts — the cn() helper required by all shadcn components
   await ensureDir(path.join(webDir, 'src', 'lib'));
   await writeFile(
     path.join(webDir, 'src', 'lib', 'utils.ts'),
-    `import { type ClassValue, clsx } from 'clsx'
+    `import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 /**
- * Merge Tailwind CSS class names without conflicts.
- * Used by every shadcn/ui component.
+ * Merge Tailwind class names without conflicts.
+ * Required by every shadcn/ui component.
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -70,6 +66,5 @@ export function cn(...inputs: ClassValue[]) {
 `,
   );
 
-  // Create components/ui directory for shadcn components
   await ensureDir(path.join(webDir, 'src', 'components', 'ui'));
 }

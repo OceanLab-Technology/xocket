@@ -1,89 +1,122 @@
 import pc from 'picocolors';
 import type { Config } from '../types.js';
+import { t, glyph, rule, gradient } from '../ui/theme.js';
+import { checklist, commandBlock, keyValues } from '../ui/summary.js';
 
-/**
- * Build the list of configured features for the summary screen.
- */
+/** The feature list shown on the summary screen. */
 export function buildConfiguredList(config: Config): string[] {
-  const list: string[] = [];
+  const list: string[] = ['TypeScript (strict)', 'Tailwind CSS v4', 'shadcn/ui'];
 
-  // TypeScript is always on
-  list.push('TypeScript (mandatory)');
-
-  // Tailwind + shadcn always on
-  list.push('Tailwind CSS');
-  list.push('shadcn/ui');
-
-  // State management
   if (config.stateManagement === 'zustand') list.push('Zustand');
   if (config.stateManagement === 'context') list.push('React Context');
   if (config.stateManagement === 'redux') list.push('Redux Toolkit');
 
-  // API
   list.push('Axios');
   if (config.serverState === 'tanstack') list.push('TanStack Query');
 
-  // Backend
   if (config.backend === 'supabase') list.push('Supabase');
-  if (config.backend === 'cognito') list.push('AWS Cognito (Amplify v6)');
-  if (config.backend === 'custom') list.push('Custom API Auth');
+  if (config.backend === 'cognito') list.push('AWS Cognito');
+  if (config.backend === 'custom') list.push('Custom API auth');
 
-  // Always-on tooling
-  list.push('Sentry (error tracking)');
-  list.push('ESLint · Prettier · Husky · lint-staged');
-  list.push('pnpm workspaces + Turborepo');
-  list.push('Git initialised');
+  if (config.seo) list.push('SEO metadata + JSON-LD');
+  if (config.aiSeo) list.push('AEO — llms.txt');
+
+  list.push('Sentry');
+  list.push('ESLint · Prettier · Husky');
+  list.push('pnpm + Turborepo');
+  list.push('Vitest');
 
   return list;
 }
 
-/**
- * Print the success summary after scaffolding.
- */
-export function printSummary(config: Config, configured: string[]): void {
-  const line = pc.dim('━'.repeat(50));
-  const frameworkLabel =
-    config.framework === 'react' ? 'React (Vite)' : 'Next.js';
-  const stateLabels: Record<string, string | null> = {
-    zustand: 'Zustand',
-    context: 'React Context',
-    redux: 'Redux Toolkit',
-    none: null,
-  };
-  const backendLabels: Record<string, string | null> = {
-    supabase: 'Supabase',
-    cognito: 'AWS Cognito',
-    custom: 'Custom API',
-    none: null,
-  };
+const FRAMEWORK_LABEL: Record<string, string> = {
+  react: 'React 19 (Vite 8)',
+  next: 'Next.js 16 (App Router)',
+};
 
-  console.log('\n' + line);
-  console.log(pc.bold(pc.green('\n  ✦  Xocket project created successfully!\n')));
-  console.log(`  ${pc.bold('Project:')}      ${pc.cyan(config.projectName)}`);
-  console.log(`  ${pc.bold('Framework:')}    ${frameworkLabel} · TypeScript`);
-  console.log(`  ${pc.bold('Styling:')}      Tailwind CSS + shadcn/ui`);
-  console.log(`  ${pc.bold('Monorepo:')}     pnpm workspaces + Turborepo`);
-  if (stateLabels[config.stateManagement]) {
-    console.log(`  ${pc.bold('State:')}        ${stateLabels[config.stateManagement]}`);
-  }
+const STATE_LABEL: Record<string, string | null> = {
+  zustand: 'Zustand',
+  context: 'React Context',
+  redux: 'Redux Toolkit',
+  none: null,
+};
+
+const BACKEND_LABEL: Record<string, string | null> = {
+  supabase: 'Supabase',
+  cognito: 'AWS Cognito',
+  custom: 'Custom API',
+  none: null,
+};
+
+/** Print the success summary. */
+export function printSummary(
+  config: Config,
+  configured: string[],
+  opts: { installed: boolean } = { installed: true },
+): void {
+  const rows = [
+    { label: 'Project', value: t.value(config.projectName) },
+    { label: 'Framework', value: FRAMEWORK_LABEL[config.framework] ?? config.framework },
+    { label: 'Styling', value: 'Tailwind v4 + shadcn/ui' },
+    { label: 'Monorepo', value: 'pnpm workspaces + Turborepo' },
+  ];
+
+  const state = STATE_LABEL[config.stateManagement];
+  if (state) rows.push({ label: 'State', value: state });
   if (config.serverState === 'tanstack') {
-    console.log(`  ${pc.bold('Server State:')} TanStack Query`);
+    rows.push({ label: 'Server state', value: 'TanStack Query' });
   }
-  if (backendLabels[config.backend]) {
-    console.log(`  ${pc.bold('Backend:')}      ${backendLabels[config.backend]}`);
-  }
-  console.log(`  ${pc.bold('Environments:')} Development / Staging / Production\n`);
-
-  console.log(`  ${pc.bold('Configured:')}`);
-  for (const item of configured) {
-    console.log(`  ${pc.green('✓')} ${item}`);
+  const backend = BACKEND_LABEL[config.backend];
+  if (backend) rows.push({ label: 'Backend', value: backend });
+  if (config.seo) {
+    rows.push({ label: 'SEO', value: config.aiSeo ? 'SEO + AEO (llms.txt)' : 'SEO' });
   }
 
-  console.log('\n' + line);
-  console.log(pc.bold('\n  Next steps:\n'));
-  console.log(`  ${pc.cyan('cd')} ${config.projectName}`);
-  console.log(`  ${pc.cyan('pnpm dev')}\n`);
-  console.log(`  To add modules later:`);
-  console.log(`  ${pc.cyan('xocket add expo')}  — add an Expo mobile app\n`);
-  console.log(line + '\n');
+  const out: string[] = [
+    '',
+    rule(),
+    '',
+    `  ${gradient(`${glyph.sparkle} Your monorepo is ready`)}`,
+    '',
+    keyValues(rows),
+    '',
+    `  ${pc.bold('Included')}`,
+    checklist(configured),
+    '',
+    rule(),
+    '',
+    `  ${pc.bold('Next steps')}`,
+    '',
+    commandBlock([
+      { cmd: `cd ${config.projectName}` },
+      ...(opts.installed ? [] : [{ cmd: 'pnpm install' }]),
+      { cmd: 'pnpm dev', note: 'start every app and service' },
+    ]),
+  ];
+
+  if (config.seo) {
+    out.push(
+      '',
+      `  ${t.muted('Set your real site details in')} ${t.path('apps/web/src/lib/seo.ts')}`,
+    );
+  }
+
+  out.push(
+    '',
+    `  ${pc.bold('Grow the workspace')}`,
+    '',
+    commandBlock([
+      { cmd: 'xocket add expo', note: 'Expo mobile app' },
+      { cmd: 'xocket add backend', note: 'Go · Rust · Python · TypeScript' },
+      { cmd: 'xocket add db', note: 'Drizzle or Prisma' },
+      { cmd: 'xocket add auth-ui', note: 'sign-in / sign-up screens' },
+      ...(config.seo ? [] : [{ cmd: 'xocket add seo', note: 'SEO + AEO' }]),
+      { cmd: 'xocket doctor', note: 'health-check this project' },
+    ]),
+    '',
+    rule(),
+    '',
+  );
+
+  console.log(out.join('\n'));
 }

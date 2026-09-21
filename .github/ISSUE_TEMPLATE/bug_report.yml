@@ -1,0 +1,70 @@
+name: Bug report
+description: Something the CLI does, or something it generates, is broken.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: if you have an existing project, please run `xocket doctor`
+        and paste the output below. It detects most known problems and often
+        prints the fix.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The exact command, please — flags included.
+      placeholder: |
+        xocket create my-app --yes -f next -s zustand -b supabase
+        cd my-app && pnpm build
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is it
+      options:
+        - The CLI itself
+        - The generated web app
+        - The generated Expo app
+        - A generated backend service
+        - The db / auth-ui / seo / agent / docker module
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: xocket doctor output
+      description: Run it in the affected project, if you have one.
+      render: shell
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      value: |
+        - xocket:
+        - node -v:
+        - pnpm -v:
+        - OS:
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      render: shell
