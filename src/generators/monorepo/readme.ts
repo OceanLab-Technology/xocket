@@ -73,7 +73,7 @@ rather not be cited by.
 
   const content = `# ${projectName}
 
-Created with [Xocket](https://github.com/OceanLab-Technology/xocket_template).
+Created with [Xocket](https://github.com/OceanLab-Technology/xocket).
 
 ## Stack
 

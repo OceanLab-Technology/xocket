@@ -131,7 +131,7 @@ ${gradient('Examples')}
 
   ${t.muted('$')} ${t.code('xocket doctor')}
 
-${t.muted('Docs: https://github.com/OceanLab-Technology/xocket_template')}
+${t.muted('Docs: https://github.com/OceanLab-Technology/xocket')}
 `,
 );
 

@@ -6,8 +6,8 @@ project expects of a change, and where things live.
 ## Getting started
 
 ```bash
-git clone https://github.com/OceanLab-Technology/xocket_template.git
-cd xocket_template
+git clone https://github.com/OceanLab-Technology/xocket.git
+cd xocket
 pnpm install
 pnpm build
 pnpm test
@@ -127,5 +127,5 @@ The release workflow builds, tests, and publishes to npm with provenance.
 
 ## Questions
 
-Open a [discussion](https://github.com/OceanLab-Technology/xocket_template/discussions)
+Open a [discussion](https://github.com/OceanLab-Technology/xocket/discussions)
 or an issue. For anything security-related, see [SECURITY.md](SECURITY.md).

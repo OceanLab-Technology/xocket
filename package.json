@@ -1,7 +1,7 @@
 {
   "name": "xocket",
   "version": "3.0.0",
-  "description": "Xocket — scaffold production-ready TypeScript monorepos: React 19 / Next 16, Tailwind v4, Expo, polyglot services and SEO/AEO.",
+  "description": "Xocket \u2014 scaffold production-ready TypeScript monorepos: React 19 / Next 16, Tailwind v4, Expo, polyglot services and SEO/AEO.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -10,6 +10,7 @@
   "files": [
     "dist/",
     "templates/",
+    "NOTICE",
     "!templates/**/node_modules",
     "!templates/**/*.lock",
     "!templates/**/pnpm-lock.yaml",
@@ -62,16 +63,16 @@
     "rust",
     "python"
   ],
-  "author": "OceanLab Technology",
+  "author": "Xocket Labs Inc. <hello@xocketlabs.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OceanLab-Technology/xocket_template.git"
+    "url": "git+https://github.com/OceanLab-Technology/xocket.git"
   },
   "bugs": {
-    "url": "https://github.com/OceanLab-Technology/xocket_template/issues"
+    "url": "https://github.com/OceanLab-Technology/xocket/issues"
   },
-  "homepage": "https://github.com/OceanLab-Technology/xocket_template#readme",
+  "homepage": "https://github.com/OceanLab-Technology/xocket#readme",
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
@@ -97,5 +98,8 @@
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
-  }
+  },
+  "contributors": [
+    "OceanLab Technology <hello@oceanlab.in>"
+  ]
 }

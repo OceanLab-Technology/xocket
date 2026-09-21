@@ -12,7 +12,7 @@
 **Do not open a public issue.**
 
 Report privately through
-[GitHub Security Advisories](https://github.com/OceanLab-Technology/xocket_template/security/advisories/new),
+[GitHub Security Advisories](https://github.com/OceanLab-Technology/xocket/security/advisories/new),
 or email **security@oceanlab.in**.
 
 Please include what you can: affected version, reproduction steps, and what an

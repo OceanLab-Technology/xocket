@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/xocket"><img alt="npm" src="https://img.shields.io/npm/v/xocket?color=0b7285&label=npm"></a>
-  <a href="https://github.com/OceanLab-Technology/xocket_template/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/OceanLab-Technology/xocket_template/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/OceanLab-Technology/xocket/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/OceanLab-Technology/xocket/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
   <a href="#requirements"><img alt="Node >= 20.19" src="https://img.shields.io/badge/node-%3E%3D20.19-5FA04E"></a>
   <a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen"></a>
@@ -197,13 +197,13 @@ project still passes `lint`, `type-check`, `build` and `test`.
 pnpm verify:output       # scaffold a throwaway project and run every gate
 ```
 
-- [Report a bug](https://github.com/OceanLab-Technology/xocket_template/issues/new?template=bug_report.yml)
+- [Report a bug](https://github.com/OceanLab-Technology/xocket/issues/new?template=bug_report.yml)
   — run `xocket doctor` first and paste the output
-- [Request a feature](https://github.com/OceanLab-Technology/xocket_template/issues/new?template=feature_request.yml)
-- [Discussions](https://github.com/OceanLab-Technology/xocket_template/discussions)
+- [Request a feature](https://github.com/OceanLab-Technology/xocket/issues/new?template=feature_request.yml)
+- [Discussions](https://github.com/OceanLab-Technology/xocket/discussions)
 - [Security policy](SECURITY.md) — please report privately
 - [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## License
 
-[MIT](LICENSE) © [OceanLab Technology](https://oceanlab.in)
+[MIT](LICENSE) © Xocket Labs Inc. (Delaware, USA) and [OceanLab Technology](https://oceanlab.in)
