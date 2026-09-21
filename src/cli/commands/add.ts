@@ -592,8 +592,13 @@ async function runInstall(rootDir: string, wanted: boolean) {
     await install(rootDir);
     spinner.stop(t.success('Dependencies installed.'));
   } catch (err) {
-    spinner.stop(t.warn('Install failed — run `pnpm install` yourself.'));
-    console.error(err);
+    spinner.stop(t.error(`${glyph.cross} Install failed.`));
+    console.error(err instanceof Error ? err.message : err);
+    console.error(
+      t.warn('\nThe module files were written, but its dependencies are missing.'),
+    );
+    console.error(t.warn('Run `pnpm install` in the project root before building.'));
+    process.exitCode = 1;
   }
 }
 

@@ -3,13 +3,24 @@ import { execa } from 'execa';
 export const PM = 'pnpm';
 
 /**
- * Run `pnpm install`.
+ * Run `pnpm install` in a project Xocket just generated or modified.
  *
- * stderr is inherited so a failing install shows the real reason instead of a
- * truncated execa message.
+ * `--no-frozen-lockfile` is required, not merely convenient: pnpm turns
+ * `--frozen-lockfile` on by default whenever CI=true, and we always install
+ * immediately after writing or editing package.json files. In a fresh project
+ * there is no lockfile at all; after `xocket add`, the existing one is
+ * deliberately out of date. Without this, both commands fail under CI with
+ * ERR_PNPM_NO_LOCKFILE / ERR_PNPM_OUTDATED_LOCKFILE.
+ *
+ * This is not the same as a project's own CI running `--frozen-lockfile`
+ * against a committed lockfile — that is still correct, and is what the
+ * generated workflow does.
  */
 export async function install(cwd: string): Promise<void> {
-  await execa(PM, ['install'], { cwd, stdio: ['ignore', 'pipe', 'inherit'] });
+  await execa(PM, ['install', '--no-frozen-lockfile'], {
+    cwd,
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
 }
 
 export async function pmExec(args: string[], cwd: string): Promise<void> {
