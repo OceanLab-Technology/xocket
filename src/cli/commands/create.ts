@@ -111,7 +111,12 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
 
   // Phases are counted so the user can see where they are, and where a
   // failure happened — previously ~20 generators ran behind one spinner.
-  const phases = 4 + (gitAvailable ? 2 : 0) + (wantsInstall ? 2 : 0);
+  const presetEntries = preset ? presetModules(preset) : [];
+  const phases =
+    4 +
+    (presetEntries.length > 0 ? 1 : 0) +
+    (gitAvailable ? 2 : 0) +
+    (wantsInstall ? 2 : 0);
   const steps = new Steps(phases);
 
   try {
@@ -143,13 +148,22 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
     await generateSeo(config);
     await generateRootFile(config);
 
+    // Modules register themselves in the manifest, so it has to exist first.
+    await writeManifest(config.rootDir, createManifest(config));
+
+    // Preset modules generate before install/format/commit so their output is
+    // formatted and committed like everything else.
+    if (presetEntries.length > 0) {
+      steps.start(`Preset modules ${t.muted(presetEntries.map((m) => m.module).join(', '))}`);
+      await applyPresetModules(config, presetEntries, steps);
+    }
+
     steps.start('Tooling');
     await generateEslint(config);
     await generateRootEslint(config);
     await generatePrettier(config);
     await generateHusky(config);
     await generateCiWorkflow(config);
-    await writeManifest(config.rootDir, createManifest(config));
 
     // git init runs before install so husky's prepare script has a repo.
     if (gitAvailable) {
@@ -171,11 +185,6 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
     }
 
     steps.succeed();
-
-    // Modules the preset asked for, applied to the finished project.
-    if (preset && preset.modules.length > 0) {
-      await applyPresetModules(config, presetModules(preset), { install: wantsInstall });
-    }
 
     printSummary(config, buildConfiguredList(config), { installed: wantsInstall });
   } catch (err) {

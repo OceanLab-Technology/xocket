@@ -111,3 +111,60 @@ describe('os tmpdir sanity', () => {
     expect(os.tmpdir()).toBeTruthy();
   });
 });
+
+describe('applyPresetModules', () => {
+  let cwd: string;
+
+  beforeAll(async () => {
+    cwd = await tmpDir('xocket-apply-');
+  });
+  afterAll(async () => fs.remove(cwd));
+
+  it('registers every module in the manifest, and orders docker last', async () => {
+    const { testConfig } = await import('./helpers.js');
+    const { generateWorkspace } = await import('../src/generators/monorepo/workspace.js');
+    const { generateProject } = await import('../src/generators/project.js');
+    const { writeManifest, createManifest, readManifest } = await import(
+      '../src/utils/manifest.js'
+    );
+    const { applyPresetModules } = await import('../src/cli/commands/apply-modules.js');
+    const { Steps } = await import('../src/ui/steps.js');
+
+    const config = testConfig(cwd, { projectName: 'applied', framework: 'next' });
+    await generateWorkspace(config);
+    await generateProject(config);
+
+    // create() must write the manifest BEFORE modules run — each one registers
+    // itself there, and docker reads it back to decide what to containerise.
+    // With the manifest missing, every module failed with ENOENT and docker
+    // produced nothing.
+    await writeManifest(config.rootDir, createManifest(config));
+
+    await applyPresetModules(
+      config,
+      [
+        { module: 'docker', target: 'compose' },
+        { module: 'backend', lang: 'go', name: 'svc-a' },
+        { module: 'db', orm: 'drizzle' },
+      ],
+      new Steps(1),
+    );
+
+    const found = await readManifest(config.rootDir);
+    expect(found).not.toBeNull();
+    expect(Object.keys(found!.manifest.services)).toContain('svc-a');
+    expect(found!.manifest.db?.orm).toBe('drizzle');
+    expect(found!.manifest.modules).toEqual(
+      expect.arrayContaining(['backend', 'db', 'docker']),
+    );
+
+    // docker ran last, so compose must list the service the preset added
+    // after it in the source list.
+    const compose = await fs.readFile(
+      path.join(config.rootDir, 'docker-compose.yml'),
+      'utf-8',
+    );
+    expect(compose).toContain('svc-a:');
+    expect(compose).toContain('postgres:');
+  });
+});

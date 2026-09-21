@@ -2,7 +2,6 @@ import type { Config } from '../../types.js';
 import { Steps } from '../../ui/steps.js';
 import { t, glyph } from '../../ui/theme.js';
 import { readManifest, updateManifest } from '../../utils/manifest.js';
-import { install } from '../../utils/pm.js';
 import { generateExpo } from '../../generators/expo/index.js';
 import { generateBackend } from '../../generators/backend/index.js';
 import { generateDb } from '../../generators/db/index.js';
@@ -30,38 +29,35 @@ export interface PresetModule {
  *
  * Ordering matters: docker reads the manifest to decide which services to
  * containerise, so it runs last regardless of where the preset listed it.
+ *
+ * This runs as one phase of `create`, before install and formatting, so module
+ * output is formatted and committed alongside everything else.
  */
 export async function applyPresetModules(
   config: Config,
   modules: PresetModule[],
-  opts: { install: boolean },
+  steps: Steps,
 ): Promise<void> {
-  const ordered = [...modules].sort(
-    (a, b) => moduleRank(a.module) - moduleRank(b.module),
-  );
-
-  console.log();
-  const steps = new Steps(ordered.length + (opts.install ? 1 : 0));
+  const ordered = [...modules].sort((a, b) => moduleRank(a.module) - moduleRank(b.module));
+  const failed: string[] = [];
 
   for (const entry of ordered) {
-    steps.start(`Module ${t.muted(entry.module)}`);
     try {
       await applyOne(config, entry);
+      steps.update(entry.module);
     } catch (err) {
       // A failed optional module should not destroy an otherwise good project.
-      steps.fail(
-        `${entry.module}: ${err instanceof Error ? err.message : String(err)}`,
+      failed.push(entry.module);
+      steps.note(
+        `${t.warn(glyph.warn)} ${entry.module}: ${err instanceof Error ? err.message : String(err)}`,
       );
-      console.log(`  ${t.muted(`Add it manually with: xocket add ${entry.module}`)}`);
+      steps.note(t.muted(`  Add it later with: xocket add ${entry.module}`));
     }
   }
 
-  if (opts.install) {
-    steps.start('Installing module dependencies');
-    await install(config.rootDir);
+  if (failed.length > 0) {
+    steps.note(t.warn(`Skipped: ${failed.join(', ')}`));
   }
-  steps.succeed();
-  console.log(`${t.success(glyph.tick)} ${t.muted('Preset modules applied.')}`);
 }
 
 function moduleRank(module: string): number {
