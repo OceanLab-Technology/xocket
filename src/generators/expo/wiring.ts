@@ -1,51 +1,52 @@
 import type { Config } from '../../types.js';
 import path from 'path';
 import { writeFile } from '../../utils/file.js';
+import { nestJsx } from '../../utils/jsx.js';
 
-export async function generateWiring(config: Config, targetDir: string) {
+/**
+ * Writes apps/expo/app/_layout.tsx with the selected providers wired in.
+ *
+ * Provider instances (QueryClient, Amplify config) are created at module scope
+ * exactly once, below the imports — the previous version interleaved statements
+ * into the import list, which is invalid at the top of a module.
+ */
+export async function generateExpoWiring(config: Config, targetDir: string) {
   const { stateManagement, serverState, backend } = config;
 
-  const imports = [
-    `import '../global.css';`,
-    `import { Slot } from 'expo-router';`
-  ];
+  const imports = [`import '../global.css'`, '', `import { Slot } from 'expo-router'`];
+  const setup: string[] = [];
   const wrappers: [string, string][] = [];
 
   if (stateManagement === 'redux') {
-    imports.push(`import { Provider } from 'react-redux';`);
-    imports.push(`import { store } from '../src/store/index';`);
+    imports.push(`import { Provider } from 'react-redux'`);
+    imports.push(`import { store } from '../src/store'`);
     wrappers.push(['Provider store={store}', 'Provider']);
   }
 
   if (serverState === 'tanstack') {
-    imports.push(`import { QueryClient, QueryClientProvider } from '@tanstack/react-query';`);
-    imports.push(`const queryClient = new QueryClient();`);
+    imports.push(`import { QueryClient, QueryClientProvider } from '@tanstack/react-query'`);
+    setup.push(`const queryClient = new QueryClient()`);
     wrappers.push(['QueryClientProvider client={queryClient}', 'QueryClientProvider']);
   }
 
   if (stateManagement === 'context') {
-    imports.push(`import { AppProvider } from '../src/context/AppContext';`);
+    imports.push(`import { AppProvider } from '../src/context/AppContext'`);
     wrappers.push(['AppProvider', 'AppProvider']);
   }
 
-  // Not doing Amplify configuration directly here since react-native amplify differs slightly, 
-  // but for the sake of mirroring the web structure:
   if (backend === 'cognito') {
-    imports.push(`import { configureAmplify } from '../src/lib/auth/cognito';`);
-    imports.push(`configureAmplify();`);
+    imports.push(`import { configureAmplify } from '../src/lib/auth/cognito'`);
+    setup.push(`configureAmplify()`);
   }
 
-  let inner = `<Slot />`;
-  for (const [open, close] of [...wrappers].reverse()) {
-    inner = `<${open}>\n      ${inner}\n    </${close}>`;
-  }
+  const inner = nestJsx('<Slot />', wrappers, '    ');
 
   const content = `${imports.join('\n')}
-
+${setup.length ? '\n' + setup.join('\n') + '\n' : ''}
 export default function RootLayout() {
   return (
     ${inner}
-  );
+  )
 }
 `;
 

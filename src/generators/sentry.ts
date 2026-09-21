@@ -1,124 +1,162 @@
 import type { Config } from '../types.js';
 import path from 'path';
-import { readPkg, writePkg, addDeps, addDevDeps } from '../utils/pkg.js';
-import { writeFile, ensureDir } from '../utils/file.js';
+import fs from 'fs-extra';
+import { readPkg, writePkg, addDeps } from '../utils/pkg.js';
+import { writeFile } from '../utils/file.js';
+import { deps } from '../versions.js';
 
 /**
- * Configures Sentry for the web app. Always runs.
+ * Configures Sentry for the web app.
  *
- * React/Vite:
- *   - Installs @sentry/react
- *   - Generates src/lib/sentry.ts  (initialized before app render in main.tsx via wiring.js)
+ * Next.js: the previous generator wrote next.config.ts but left the template's
+ * next.config.js in place. Next 14 could not read a .ts config at all, so it
+ * loaded the empty .js one and Sentry was silently never applied — while the
+ * summary screen still printed "✓ Sentry". Next 16 does support next.config.ts,
+ * and the stale .js file is now removed.
  *
- * Next.js:
- *   - Installs @sentry/nextjs
- *   - Generates sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts
- *   - Writes next.config.ts (replaces next.config.js) wrapped with withSentryConfig
+ * Sentry v8 config files (sentry.client/server/edge.config.ts) were replaced in
+ * v9+ by `instrumentation.ts` / `instrumentation-client.ts`.
  */
 export async function generateSentry(config: Config) {
-  const { framework, webDir } = config;
-
-  let pkg = await readPkg(webDir);
-
-  if (framework === 'react') {
-    await generateReactSentry(config, pkg);
+  if (config.framework === 'react') {
+    await generateReactSentry(config);
   } else {
-    await generateNextSentry(config, pkg);
+    await generateNextSentry(config);
   }
 }
 
 // ─── React / Vite ────────────────────────────────────────────────────────────
 
-async function generateReactSentry(config: Config, pkg: any) {
+async function generateReactSentry(config: Config) {
   const { webDir } = config;
 
-  pkg = addDeps(pkg, { '@sentry/react': '^8.28.0' });
+  let pkg = await readPkg(webDir);
+  pkg = addDeps(pkg, deps('@sentry/react'));
   await writePkg(webDir, pkg);
-
-  await ensureDir(path.join(webDir, 'src', 'lib'));
 
   await writeFile(
     path.join(webDir, 'src', 'lib', 'sentry.ts'),
     `import * as Sentry from '@sentry/react'
 
-const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined
-const mode = (import.meta.env.MODE as string) ?? 'development'
+const dsn = import.meta.env.VITE_SENTRY_DSN
+const mode = import.meta.env.MODE ?? 'development'
 
 Sentry.init({
   dsn,
   environment: mode,
-  // Disable Sentry in local development and when DSN is not set
-  enabled: mode !== 'development' && !!dsn,
+  // No DSN, or running locally? Stay silent.
+  enabled: mode !== 'development' && Boolean(dsn),
   tracesSampleRate: mode === 'production' ? 0.2 : 1.0,
   integrations: [Sentry.browserTracingIntegration()],
 })
+`,
+  );
+
+  // Typed import.meta.env for the Vite client.
+  await writeFile(
+    path.join(webDir, 'src', 'vite-env.d.ts'),
+    `/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_API_URL?: string
+  readonly VITE_SENTRY_DSN?: string
+  readonly VITE_SUPABASE_URL?: string
+  readonly VITE_SUPABASE_ANON_KEY?: string
+  readonly VITE_COGNITO_USER_POOL_ID?: string
+  readonly VITE_COGNITO_CLIENT_ID?: string
+  readonly VITE_COGNITO_REGION?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
 `,
   );
 }
 
 // ─── Next.js App Router ───────────────────────────────────────────────────────
 
-async function generateNextSentry(config: Config, pkg: any) {
+async function generateNextSentry(config: Config) {
   const { webDir } = config;
 
-  pkg = addDeps(pkg, { '@sentry/nextjs': '^8.28.0' });
+  let pkg = await readPkg(webDir);
+  pkg = addDeps(pkg, deps('@sentry/nextjs'));
   await writePkg(webDir, pkg);
 
-  const clientConfig = `import * as Sentry from '@sentry/nextjs'
+  // instrumentation-client.ts — replaces sentry.client.config.ts (Sentry v9+)
+  await writeFile(
+    path.join(webDir, 'instrumentation-client.ts'),
+    `import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  // Only send events in production
   enabled: process.env.NODE_ENV === 'production',
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
 })
-`;
 
-  const serverConfig = `import * as Sentry from '@sentry/nextjs'
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
+`,
+  );
 
-Sentry.init({
-  // Server-side DSN — do NOT use NEXT_PUBLIC_ prefix
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  enabled: process.env.NODE_ENV === 'production',
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
-})
-`;
+  // instrumentation.ts — server + edge runtimes
+  await writeFile(
+    path.join(webDir, 'instrumentation.ts'),
+    `import * as Sentry from '@sentry/nextjs'
 
-  const edgeConfig = `import * as Sentry from '@sentry/nextjs'
+export async function register() {
+  const common = {
+    // Server-side DSN — deliberately NOT the NEXT_PUBLIC_ one.
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    enabled: process.env.NODE_ENV === 'production',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  }
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  enabled: process.env.NODE_ENV === 'production',
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
-})
-`;
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    Sentry.init(common)
+  }
 
-  await writeFile(path.join(webDir, 'sentry.client.config.ts'), clientConfig);
-  await writeFile(path.join(webDir, 'sentry.server.config.ts'), serverConfig);
-  await writeFile(path.join(webDir, 'sentry.edge.config.ts'), edgeConfig);
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    Sentry.init(common)
+  }
+}
 
-  // next.config.ts — replaces the .js template version
+export const onRequestError = Sentry.captureRequestError
+`,
+  );
+
+  // next.config.ts is authoritative from Next 15 onward — drop the template .js
+  // and any sentry.*.config.ts files an older scaffold produced.
+  for (const stale of [
+    'next.config.js',
+    'next.config.mjs',
+    'sentry.client.config.ts',
+    'sentry.server.config.ts',
+    'sentry.edge.config.ts',
+  ]) {
+    const f = path.join(webDir, stale);
+    if (await fs.pathExists(f)) await fs.remove(f);
+  }
+
   await writeFile(
     path.join(webDir, 'next.config.ts'),
     `import type { NextConfig } from 'next'
-import { withSentryConfig } from '@sentry/nextjs'
+// v10 moved this to the /config subpath; the bare import stops working in v11.
+import { withSentryConfig } from '@sentry/nextjs/config'
 
 const nextConfig: NextConfig = {
-  // Your Next.js config here
+  // Your Next.js config here.
 }
 
 export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Auth token for source-map uploads — set as a CI/CD secret only
+  // Source-map uploads need an auth token; set it as a CI secret, never in git.
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  // Suppress Sentry CLI output during builds
   silent: !process.env.CI,
-  // Automatically tree-shake Sentry logger statements
-  disableLogger: true,
+  // Skip source-map upload entirely when there is no token (local dev, CI smoke).
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
 })
 `,
   );

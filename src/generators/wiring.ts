@@ -2,127 +2,165 @@ import type { Config } from '../types.js';
 import path from 'path';
 import fs from 'fs-extra';
 import { writeFile, ensureDir } from '../utils/file.js';
+import { nestJsx } from '../utils/jsx.js';
 
 /**
- * Generates the root entry file for the web app:
- *   React → apps/web/src/main.tsx
- *   Next.js → apps/web/src/app/layout.tsx  + Providers.tsx (if needed)
+ * Generates the web app's root entry file with every selected provider wired in.
  *
- * Always TypeScript (tsx). Wires all selected providers together.
- * For React: also initialises Sentry before render.
+ *   React → apps/web/src/main.tsx
+ *   Next  → apps/web/src/app/layout.tsx (+ components/Providers.tsx when needed)
  */
 export async function generateRootFile(config: Config) {
-  const { framework } = config;
-
-  if (framework === 'react') {
+  if (config.framework === 'react') {
     await generateReactMain(config);
   } else {
     await generateNextLayout(config);
   }
 }
 
-// ─── React / Vite ─────────────────────────────────────────────────────────────
+interface Wiring {
+  imports: string[];
+  setup: string[];
+  wrappers: [open: string, close: string][];
+}
 
-async function generateReactMain(config: Config) {
-  const { stateManagement, serverState, backend, webDir } = config;
-
-  const imports = [
-    `import React from 'react'`,
-    `import ReactDOM from 'react-dom/client'`,
-    // Sentry must be initialised before the app renders
-    `import './lib/sentry'`,
-    `import App from './App.tsx'`,
-    `import './index.css'`,
-  ];
-
-  const preRender = [];
-  const wrappers = []; // [openTag, closeTag] — outermost first
+/**
+ * Work out which providers this config needs, as import lines, module-scope
+ * setup statements, and JSX wrappers (outermost first).
+ */
+function collectWiring(config: Config, prefix: string): Wiring {
+  const { stateManagement, serverState, backend } = config;
+  const imports: string[] = [];
+  const setup: string[] = [];
+  const wrappers: [string, string][] = [];
 
   if (stateManagement === 'redux') {
     imports.push(`import { Provider } from 'react-redux'`);
-    imports.push(`import { store } from './store/index'`);
+    imports.push(`import { store } from '${prefix}store'`);
     wrappers.push(['Provider store={store}', 'Provider']);
   }
 
   if (serverState === 'tanstack') {
-    imports.push(
-      `import { QueryClient, QueryClientProvider } from '@tanstack/react-query'`,
-    );
-    preRender.push(`const queryClient = new QueryClient()`);
+    imports.push(`import { QueryClient, QueryClientProvider } from '@tanstack/react-query'`);
+    setup.push(`const queryClient = new QueryClient()`);
     wrappers.push(['QueryClientProvider client={queryClient}', 'QueryClientProvider']);
   }
 
   if (stateManagement === 'context') {
-    imports.push(`import { AppProvider } from './context/AppContext'`);
+    imports.push(`import { AppProvider } from '${prefix}context/AppContext'`);
     wrappers.push(['AppProvider', 'AppProvider']);
   }
 
   if (backend === 'cognito') {
-    imports.push(`import { configureAmplify } from './lib/auth/cognito'`);
-    preRender.push(`configureAmplify()`);
+    imports.push(`import { configureAmplify } from '${prefix}lib/auth/cognito'`);
+    setup.push(`configureAmplify()`);
   }
 
-  // Build nested JSX (innermost = App, wrap outward)
-  let inner = `<App />`;
-  for (const [open, close] of [...wrappers].reverse()) {
-    inner = `<${open}>\n        ${inner}\n      </${close}>`;
-  }
+  return { imports, setup, wrappers };
+}
 
-  const content = `${imports.join('\n')}
-${preRender.length ? '\n' + preRender.join('\n') : ''}
+// ─── React / Vite ─────────────────────────────────────────────────────────────
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    ${inner}
-  </React.StrictMode>,
+async function generateReactMain(config: Config) {
+  const { webDir } = config;
+  const { imports, setup, wrappers } = collectWiring(config, './');
+
+  // React 19 no longer needs the React import for JSX.
+  const head = [
+    `import { StrictMode } from 'react'`,
+    `import { createRoot } from 'react-dom/client'`,
+    // Sentry initialises on import, before anything renders.
+    `import './lib/sentry'`,
+    `import App from './App'`,
+    `import './index.css'`,
+    ...imports,
+  ];
+
+  const tree = nestJsx('<App />', wrappers, '    ');
+
+  const content = `${head.join('\n')}
+${setup.length ? '\n' + setup.join('\n') + '\n' : ''}
+const rootElement = document.getElementById('root')
+
+if (!rootElement) {
+  throw new Error('Root element #root not found in index.html')
+}
+
+createRoot(rootElement).render(
+  <StrictMode>
+    ${tree}
+  </StrictMode>,
 )
 `;
 
   await writeFile(path.join(webDir, 'src', 'main.tsx'), content);
-
-  // Update index.html to point to main.tsx
-  const { replaceInFile } = await import('../utils/file.js');
-  await replaceInFile(
-    path.join(webDir, 'index.html'),
-    '/src/main.jsx',
-    '/src/main.tsx',
-  );
 }
 
 // ─── Next.js App Router ───────────────────────────────────────────────────────
 
 async function generateNextLayout(config: Config) {
-  const { stateManagement, serverState, backend, webDir } = config;
+  const { webDir, projectName } = config;
+  const { imports, setup, wrappers } = collectWiring(config, '@/');
 
-  const needsClientProvider =
-    stateManagement === 'redux' ||
-    stateManagement === 'context' ||
-    serverState === 'tanstack' ||
-    backend === 'cognito';
+  const needsProviders = wrappers.length > 0 || setup.length > 0;
 
-  if (needsClientProvider) {
-    await generateProvidersComponent(config);
+  if (needsProviders) {
+    await ensureDir(path.join(webDir, 'src', 'components'));
+
+    const tree = nestJsx('{children}', wrappers, '    ');
+    const content = `'use client'
+
+import type { ReactNode } from 'react'
+${imports.join('\n')}
+${setup.length ? '\n' + setup.join('\n') + '\n' : ''}
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    ${tree}
+  )
+}
+`;
+    await writeFile(path.join(webDir, 'src', 'components', 'Providers.tsx'), content);
   }
 
-  const providersImport = needsClientProvider
-    ? `import { Providers } from '../components/Providers'\n`
+  const body = needsProviders ? `        <Providers>{children}</Providers>` : `        {children}`;
+
+  // With the SEO module on, metadata and JSON-LD come from src/lib/seo.ts.
+  const metadataBlock = config.seo
+    ? `import { siteMetadata, siteViewport, organizationJsonLd, websiteJsonLd } from '@/lib/seo'
+
+export const metadata: Metadata = siteMetadata
+export const viewport: Viewport = siteViewport`
+    : `export const metadata: Metadata = {
+  title: '${projectName}',
+  description: 'Generated with Xocket',
+}`;
+
+  const jsonLd = config.seo
+    ? `        <script
+          type="application/ld+json"
+          // JSON-LD is trusted, locally-generated content.
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([organizationJsonLd(), websiteJsonLd()]),
+          }}
+        />
+`
     : '';
 
-  const body = needsClientProvider
-    ? `        <Providers>{children}</Providers>`
-    : `        {children}`;
+  const typeImport = config.seo
+    ? `import type { Metadata, Viewport } from 'next'`
+    : `import type { Metadata } from 'next'`;
 
-  const content = `import React from 'react'
+  const content = `${typeImport}
+import type { ReactNode } from 'react'
 import './globals.css'
-${providersImport}
-export const metadata = {
-  title: 'App',
-  description: 'Generated with Xocket',
-}
+${needsProviders ? `import { Providers } from '@/components/Providers'\n` : ''}
+${metadataBlock}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+${jsonLd}      </head>
       <body>
 ${body}
       </body>
@@ -133,59 +171,7 @@ ${body}
 
   await writeFile(path.join(webDir, 'src', 'app', 'layout.tsx'), content);
 
-  // Remove the .jsx placeholder from the template (we just wrote .tsx)
-  const oldJsx = path.join(webDir, 'src', 'app', 'layout.jsx');
-  if (await fs.pathExists(oldJsx)) await fs.remove(oldJsx);
-}
-
-async function generateProvidersComponent(config: Config) {
-  const { stateManagement, serverState, backend, webDir } = config;
-  const componentsDir = path.join(webDir, 'src', 'components');
-  await ensureDir(componentsDir);
-
-  const lines = [`'use client'`, ''];
-  const preRender = [];
-  const wrappers = [];
-
-  if (stateManagement === 'redux') {
-    lines.push(`import { Provider } from 'react-redux'`);
-    lines.push(`import { store } from '../store/index'`);
-    wrappers.push(['Provider store={store}', 'Provider']);
-  }
-
-  if (serverState === 'tanstack') {
-    lines.push(
-      `import { QueryClient, QueryClientProvider } from '@tanstack/react-query'`,
-    );
-    preRender.push(`const queryClient = new QueryClient()`);
-    wrappers.push(['QueryClientProvider client={queryClient}', 'QueryClientProvider']);
-  }
-
-  if (stateManagement === 'context') {
-    lines.push(`import { AppProvider } from '../context/AppContext'`);
-    wrappers.push(['AppProvider', 'AppProvider']);
-  }
-
-  if (backend === 'cognito') {
-    lines.push(`import { configureAmplify } from '../lib/auth/cognito'`);
-    preRender.push(`configureAmplify()`);
-  }
-
-  lines.push(`import React from 'react'`);
-  lines.push('');
-
-  let inner = `{children}`;
-  for (const [open, close] of [...wrappers].reverse()) {
-    inner = `<${open}>\n        ${inner}\n      </${close}>`;
-  }
-
-  const content = `${lines.join('\n')}
-${preRender.length ? preRender.join('\n') + '\n\n' : ''}export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    ${inner}
-  )
-}
-`;
-
-  await writeFile(path.join(componentsDir, 'Providers.tsx'), content);
+  // Drop any .jsx placeholder an older template left behind.
+  const legacy = path.join(webDir, 'src', 'app', 'layout.jsx');
+  if (await fs.pathExists(legacy)) await fs.remove(legacy);
 }

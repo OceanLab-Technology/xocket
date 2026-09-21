@@ -3,22 +3,37 @@ import path from 'path';
 import { writeFile } from '../../utils/file.js';
 
 /**
- * Generates <rootDir>/turbo.json with the standard task pipeline.
+ * Generates <rootDir>/turbo.json.
+ *
+ * `outputs` covers Rust (`target/release`), Go (`bin`) and Python builds too,
+ * so polyglot services added later are cached correctly. `.env*` is declared as
+ * an input so a changed env file busts the build cache.
  */
 export async function generateTurbo(config: Config) {
   const turboConfig = {
     $schema: 'https://turbo.build/schema.json',
+    ui: 'tui',
+    globalDependencies: ['**/.env.*local', 'pnpm-lock.yaml'],
     tasks: {
       build: {
         dependsOn: ['^build'],
-        outputs: ['.next/**', '!.next/cache/**', 'dist/**'],
+        inputs: ['$TURBO_DEFAULT$', '.env*'],
+        outputs: [
+          '.next/**',
+          '!.next/cache/**',
+          'dist/**',
+          'build/**',
+          'target/release/**',
+          'bin/**',
+        ],
       },
       dev: {
         cache: false,
         persistent: true,
       },
-      lint: {},
-      'type-check': {},
+      lint: { dependsOn: ['^lint'] },
+      'type-check': { dependsOn: ['^type-check'] },
+      test: { dependsOn: ['^build'], outputs: ['coverage/**'] },
       'format:check': {},
     },
   };

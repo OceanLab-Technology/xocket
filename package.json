@@ -1,7 +1,7 @@
 {
   "name": "xocket",
-  "version": "2.0.0",
-  "description": "Xocket — Monorepo Development Platform CLI",
+  "version": "3.0.0",
+  "description": "Xocket \u2014 scaffold production-ready TypeScript monorepos: React 19 / Next 16, Tailwind v4, Expo, polyglot services and SEO/AEO.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -11,20 +11,23 @@
     "dist/",
     "templates/",
     "!templates/**/node_modules",
-    "!templates/**/package-lock.json",
+    "!templates/**/*.lock",
+    "!templates/**/pnpm-lock.yaml",
     "!**/.DS_Store"
   ],
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
-    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
-    "prebuild": "npm run clean",
+    "clean": "node --input-type=module -e \"import{rmSync}from'node:fs';rmSync('dist',{recursive:true,force:true})\"",
+    "prebuild": "pnpm run clean",
     "build": "tsc",
-    "postbuild": "node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
-    "prepublishOnly": "npm run build",
+    "postbuild": "node --input-type=module -e \"import{chmodSync}from'node:fs';chmodSync('dist/index.js',0o755)\"",
+    "prepublishOnly": "pnpm run build && pnpm run test",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
@@ -32,16 +35,25 @@
     "execa": "^8.0.1",
     "fs-extra": "^11.2.0",
     "ora": "^8.0.1",
-    "picocolors": "^1.0.0"
+    "picocolors": "^1.0.0",
+    "zod": "^4.6.5"
   },
   "keywords": [
     "cli",
     "scaffold",
     "monorepo",
+    "turborepo",
+    "pnpm",
     "react",
     "nextjs",
-    "turborepo",
-    "pnpm"
+    "expo",
+    "tailwind",
+    "shadcn",
+    "seo",
+    "llms-txt",
+    "go",
+    "rust",
+    "python"
   ],
   "author": "OceanLab Technology",
   "license": "MIT",
@@ -57,6 +69,8 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^26.4.1",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
-  }
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  },
+  "packageManager": "pnpm@10.20.0"
 }

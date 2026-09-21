@@ -3,20 +3,12 @@ import path from 'path';
 import { writeFile } from '../utils/file.js';
 
 /**
- * Generates root-level Prettier config.
- * The actual config is in packages/prettier-config.
- * Root .prettierrc just references it.
+ * Root Prettier wiring. The config object itself lives in
+ * packages/prettier-config, which the root package.json now depends on.
  */
 export async function generatePrettier(config: Config) {
   const { rootDir } = config;
 
-  // Root .prettierrc — extends shared config
-  await writeFile(
-    path.join(rootDir, '.prettierrc'),
-    `"@xocket/prettier-config"\n`,
-  );
-
-  // Root .prettierignore
   await writeFile(
     path.join(rootDir, '.prettierignore'),
     `# Dependencies
@@ -29,17 +21,26 @@ dist
 out
 build
 .turbo
+target
+bin
+coverage
 
 # Env files
 .env*
 
 # Lock files
 pnpm-lock.yaml
-yarn.lock
-package-lock.json
+Cargo.lock
+poetry.lock
+go.sum
 
-# Generated
+# Generated — these are written by a build, not by hand
 *.lock
+.xocket
+next-env.d.ts
+expo-env.d.ts
+nativewind-env.d.ts
+.expo
 `,
   );
 }

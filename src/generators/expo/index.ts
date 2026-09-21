@@ -1,43 +1,38 @@
 import type { Config } from '../../types.js';
 import path from 'path';
 
-import { generateProject } from './project.js';
-import { generateMetroConfig } from './metro.js';
-import { generateStyling } from './styling.js';
-import { generateWiring } from './wiring.js';
+import { generateExpoProject } from './project.js';
+import { generateExpoStyling } from './styling.js';
+import { generateExpoWiring } from './wiring.js';
 
 import { generateState } from '../state.js';
 import { generateApi } from '../api.js';
 import { generateQuery } from '../query.js';
 import { generateAuthentication } from '../authentication.js';
+import { generateEnvironment } from '../environment.js';
+import { deriveAppConfig } from '../../cli/config.js';
 
+/**
+ * Scaffolds apps/expo, mirroring whatever stack the web app already uses.
+ *
+ * The shared generators are driven by a config derived with `target: 'expo'`,
+ * which is what routes them to EXPO_PUBLIC_ env vars and `process.env` instead
+ * of the web app's Vite/Next conventions. The previous version spread the web
+ * config and overrode only `framework`, leaving `isNext`/`isReact` describing
+ * the wrong app.
+ */
 export async function generateExpo(config: Config, rootDir: string) {
   const targetDir = path.join(rootDir, 'apps', 'expo');
 
-  // 1. Scaffold project files and dependencies
-  await generateProject(config, targetDir);
+  // Expo runs React, never Next — but it is its own target.
+  const expoConfig = deriveAppConfig(config, { framework: 'react', target: 'expo' });
 
-  // 2. Metro workspace configuration
-  await generateMetroConfig(targetDir);
-
-  // 3. Styling (NativeWind)
-  await generateStyling(targetDir);
-
-  // 4. State Management (Zustand, Redux, Context)
-  await generateState(config, targetDir);
-
-  // 5. API layer (Axios)
-  await generateApi(config, targetDir);
-
-  // 6. Server State (TanStack Query)
-  await generateQuery(config, targetDir);
-
-  // 7. Authentication
-  // Note: This relies on the generators being environment-agnostic. 
-  // We use the 'react' framework path since Expo runs React.
-  const proxyConfig = { ...config, framework: 'react' };
-  await generateAuthentication(proxyConfig, targetDir);
-
-  // 8. Wire Providers
-  await generateWiring(config, targetDir);
+  await generateExpoProject(expoConfig, targetDir);
+  await generateExpoStyling(targetDir);
+  await generateState(expoConfig, targetDir);
+  await generateApi(expoConfig, targetDir);
+  await generateQuery(expoConfig, targetDir);
+  await generateAuthentication(expoConfig, targetDir);
+  await generateEnvironment(expoConfig, targetDir);
+  await generateExpoWiring(expoConfig, targetDir);
 }

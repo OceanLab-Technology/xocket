@@ -6,7 +6,7 @@ import { execa } from 'execa';
  * Must run BEFORE pnpm install so the prepare script (husky) works.
  */
 export async function gitInit(config: Config) {
-  await execa('git', ['init'], { cwd: config.rootDir });
+  await execa('git', ['init', '-b', 'main'], { cwd: config.rootDir });
 }
 
 /**

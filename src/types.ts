@@ -1,33 +1,13 @@
-export interface Config {
-  projectName: string;
-  rootDir: string;
-  webDir: string;
-  packageManager: string;
-  projectType: string;
-  framework: string;
-  language: string;
-  stateManagement: string;
-  serverState: string;
-  backend: string;
-  isNext: boolean;
-  isReact: boolean;
-}
-
-export interface ManifestApp {
-  path: string;
-  framework: string;
-  backend: string;
-  serverState: string;
-  stateManagement: string;
-  sentry: boolean;
-}
-
-export interface Manifest {
-  version: string;
-  createdAt: string;
-  projectName: string;
-  packageManager: string;
-  apps: Record<string, ManifestApp>;
-  packages: string[];
-  modules: string[];
-}
+/**
+ * Runtime-validated types live in schema.ts; this module re-exports them so
+ * existing `import type { Config } from '../types.js'` call sites keep working.
+ */
+export type {
+  Answers,
+  Config,
+  CreateFlags,
+  AddFlags,
+  Manifest,
+  ManifestApp,
+  ManifestService,
+} from './schema.js';

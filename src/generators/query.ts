@@ -2,6 +2,7 @@ import type { Config } from '../types.js';
 import path from 'path';
 import { readPkg, writePkg, addDeps } from '../utils/pkg.js';
 import { ensureDir } from '../utils/file.js';
+import { deps } from '../versions.js';
 
 /**
  * Installs TanStack Query and creates the hooks directory.
@@ -11,7 +12,7 @@ export async function generateQuery(config: Config, targetDir: string) {
   if (config.serverState !== 'tanstack') return;
 
   let pkg = await readPkg(targetDir);
-  pkg = addDeps(pkg, { '@tanstack/react-query': '^5.56.2' });
+  pkg = addDeps(pkg, deps('@tanstack/react-query'));
   await writePkg(targetDir, pkg);
 
   // Create hooks/queries directory scaffold
