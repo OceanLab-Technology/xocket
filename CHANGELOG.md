@@ -35,6 +35,25 @@ regression test, and `xocket doctor` detects each one in an existing project.
   it also had no `.env` files, and `app.json` referenced assets never shipped.
 - A freshly generated project failed its own `format:check`.
 
+### Fixed — found by CI and the release smoke test
+
+These were caught before 3.0.0 shipped, by gates that did not exist in 2.0.0.
+
+- **`xocket create` and `xocket add` failed in any CI environment.** pnpm turns
+  on `--frozen-lockfile` whenever `CI=true`, but the CLI always installs right
+  after writing package.json — a fresh project has no lockfile at all.
+- **Templates were copied through a filter that tested the absolute path for
+  `node_modules`.** A globally installed CLI lives under
+  `lib/node_modules/xocket/`, so `npx xocket create` matched every file, copied
+  nothing, and produced an app directory with no package.json. Only reproduces
+  through a real install, never from a source checkout.
+- **`fs-extra`, `ora` and `picocolors` had drifted into devDependencies**, so
+  the published tarball was missing three of its seven runtime dependencies.
+- **The Prisma generator emitted the Prisma 5/6 shape.** Prisma 7 moved the
+  connection URL into `prisma.config.ts` and requires a driver adapter.
+- **`uv sync --frozen`** cannot work on a freshly generated Python service;
+  there is no `uv.lock` until `uv sync` creates one.
+
 ### Changed — stack refresh
 
 React 19, Next 16, Tailwind v4 (CSS-first), Expo 57, Sentry v10 instrumentation
@@ -69,6 +88,12 @@ on 10.
   cannot drift apart.
 - **Vitest + Testing Library** in every generated app, with a passing test.
 - **Generated CI** — a GitHub Actions workflow and grouped Dependabot config.
+- **Release pipeline** — publishes from CI on a `v*` tag with npm provenance,
+  after verifying the tag matches package.json, the tarball carries the
+  templates, and a project scaffolded from that tarball passes every gate.
+- **Repo tooling** — husky (lint-staged, commitlint, pre-push), ESLint and
+  Prettier for the CLI itself, and `pnpm verify:output` to scaffold a throwaway
+  project and run every gate against it.
 - **Preflight checks** for Node, pnpm and git before any file is written.
 - **Terminal UI** — gradient banner, numbered phase progress, aligned summary,
   colourised help; all of it degrades off a TTY and under `NO_COLOR`.
