@@ -149,6 +149,9 @@ case ":${PATH}:" in
     ;;
   *)
     warn "${BIN_DIR} is not on your PATH."
+    # These are filenames we print for the reader, not paths we open, so the
+    # tilde stays literal on purpose.
+    # shellcheck disable=SC2088
     case "${SHELL##*/}" in
       zsh)  RC="~/.zshrc" ;;
       bash) RC="~/.bashrc" ;;
@@ -159,6 +162,8 @@ case ":${PATH}:" in
     if [ "${SHELL##*/}" = "fish" ]; then
       printf '    %sfish_add_path %s%s\n\n' "$CYAN" "$BIN_DIR" "$R"
     else
+      # $PATH must survive verbatim — this is the line the user will paste.
+      # shellcheck disable=SC2016
       printf '    %sexport PATH="%s:$PATH"%s\n\n' "$CYAN" "$BIN_DIR" "$R"
     fi
     printf '  Then restart your shell and run:  %sxocket create my-app%s\n\n' "$CYAN" "$R"
