@@ -22,7 +22,11 @@ export async function generateAuthUi(config: Config, targetDir: string = config.
   }
 
   let pkg = await readPkg(targetDir);
-  pkg = addDeps(pkg, { 'react-hook-form': DEPS['react-hook-form'], zod: DEPS.zod, '@hookform/resolvers': DEPS['@hookform/resolvers'] });
+  pkg = addDeps(pkg, {
+    'react-hook-form': DEPS['react-hook-form'],
+    zod: DEPS.zod,
+    '@hookform/resolvers': DEPS['@hookform/resolvers'],
+  });
   await writePkg(targetDir, pkg);
 
   await writeAuthClient(config, targetDir);

@@ -101,9 +101,7 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
   const config = buildConfig(answers);
 
   if (fs.existsSync(config.rootDir)) {
-    p.cancel(
-      t.error(`Directory '${config.projectName}' already exists. Choose a different name.`),
-    );
+    p.cancel(t.error(`Directory '${config.projectName}' already exists. Choose a different name.`));
     process.exit(1);
   }
 
@@ -113,10 +111,7 @@ export async function run(rawFlags: CreateFlags & { name?: string } = {}) {
   // failure happened — previously ~20 generators ran behind one spinner.
   const presetEntries = preset ? presetModules(preset) : [];
   const phases =
-    4 +
-    (presetEntries.length > 0 ? 1 : 0) +
-    (gitAvailable ? 2 : 0) +
-    (wantsInstall ? 2 : 0);
+    4 + (presetEntries.length > 0 ? 1 : 0) + (gitAvailable ? 2 : 0) + (wantsInstall ? 2 : 0);
   const steps = new Steps(phases);
 
   try {

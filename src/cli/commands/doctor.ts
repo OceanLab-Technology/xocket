@@ -65,11 +65,7 @@ async function checkEnvironment(out: Finding[]) {
   }
 }
 
-async function checkGeneratorDrift(
-  rootDir: string,
-  manifest: { version: string },
-  out: Finding[],
-) {
+async function checkGeneratorDrift(rootDir: string, manifest: { version: string }, out: Finding[]) {
   if (manifest.version === VERSION) {
     out.push({ severity: 'ok', title: `Created with Xocket ${manifest.version} (current)` });
     return;
@@ -143,7 +139,7 @@ async function checkKnownBreakage(
         severity: 'error',
         title: "eslint-config exports './react' but not './react.js'",
         detail: 'Apps import the .js specifier, so lint fails with ERR_PACKAGE_PATH_NOT_EXPORTED.',
-        fix: "Add \"./react.js\": \"./react.js\" to the exports map.",
+        fix: 'Add "./react.js": "./react.js" to the exports map.',
       });
     }
   }
@@ -173,7 +169,8 @@ async function checkKnownBreakage(
         out.push({
           severity: 'error',
           title: `${f} contains a top-level await`,
-          detail: "Tailwind's config loader transpiles to CJS and throws on it, so no CSS is produced.",
+          detail:
+            "Tailwind's config loader transpiles to CJS and throws on it, so no CSS is produced.",
           fix: 'Use a static import, or migrate to Tailwind v4 (no config file).',
         });
       }
@@ -181,11 +178,16 @@ async function checkKnownBreakage(
   }
 
   // Both next configs present — Next reads only one.
-  if (manifest.apps.web?.framework === 'next' && (await has('next.config.js')) && (await has('next.config.ts'))) {
+  if (
+    manifest.apps.web?.framework === 'next' &&
+    (await has('next.config.js')) &&
+    (await has('next.config.ts'))
+  ) {
     out.push({
       severity: 'error',
       title: 'Both next.config.js and next.config.ts exist',
-      detail: 'Next loads one and silently ignores the other, which usually means Sentry never gets applied.',
+      detail:
+        'Next loads one and silently ignores the other, which usually means Sentry never gets applied.',
       fix: 'Delete apps/web/next.config.js.',
     });
   }
@@ -245,7 +247,8 @@ async function checkKnownBreakage(
       out.push({
         severity: 'error',
         title: 'Expo app reads web-only environment variables',
-        detail: 'Neither import.meta.env nor NEXT_PUBLIC_* exists under Metro, so the value is undefined at runtime.',
+        detail:
+          'Neither import.meta.env nor NEXT_PUBLIC_* exists under Metro, so the value is undefined at runtime.',
         fix: 'Use EXPO_PUBLIC_* via process.env.',
       });
     }

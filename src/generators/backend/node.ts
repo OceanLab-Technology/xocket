@@ -71,11 +71,7 @@ export default base
   // Per-package turbo config so this service's outputs are cached correctly.
   await writeFile(
     path.join(targetDir, 'turbo.json'),
-    JSON.stringify(
-      { extends: ['//'], tasks: { build: { outputs: ['dist/**'] } } },
-      null,
-      2,
-    ) + '\n',
+    JSON.stringify({ extends: ['//'], tasks: { build: { outputs: ['dist/**'] } } }, null, 2) + '\n',
   );
 
   await ensureDir(path.join(targetDir, 'src'));
@@ -107,8 +103,5 @@ serve({ fetch: app.fetch, port }, (info) => {
 `,
   );
 
-  await writeFile(
-    path.join(targetDir, '.env.example'),
-    `PORT=${port}\n`,
-  );
+  await writeFile(path.join(targetDir, '.env.example'), `PORT=${port}\n`);
 }

@@ -53,12 +53,10 @@ describe('generator regressions', () => {
     // must not live in the shared package — that caused TS18003.
     expect(shared).not.toHaveProperty('include');
     expect(shared).not.toHaveProperty('exclude');
-    expect((shared.compilerOptions as Record<string, unknown>)).not.toHaveProperty('baseUrl');
-    expect((shared.compilerOptions as Record<string, unknown>)).not.toHaveProperty('paths');
+    expect(shared.compilerOptions as Record<string, unknown>).not.toHaveProperty('baseUrl');
+    expect(shared.compilerOptions as Record<string, unknown>).not.toHaveProperty('paths');
 
-    const app = await readJson<Record<string, any>>(
-      path.join(config.webDir, 'tsconfig.json'),
-    );
+    const app = await readJson<Record<string, any>>(path.join(config.webDir, 'tsconfig.json'));
     expect(app.include).toContain('src');
     expect(app.compilerOptions.paths['@/*']).toEqual(['./src/*']);
   });
@@ -86,9 +84,7 @@ describe('generator regressions', () => {
 
   it('gives the root the dependencies its own scripts and hooks need', async () => {
     const config = await scaffold();
-    const pkg = await readJson<Record<string, any>>(
-      path.join(config.rootDir, 'package.json'),
-    );
+    const pkg = await readJson<Record<string, any>>(path.join(config.rootDir, 'package.json'));
     // lint-staged runs eslint at the root; .prettierrc resolves the shared config.
     expect(pkg.devDependencies).toHaveProperty('eslint');
     expect(pkg.devDependencies).toHaveProperty('@xocket/prettier-config');
@@ -170,7 +166,12 @@ describe('seo module', () => {
 
   it('adds metadata routes for Next', async () => {
     const config = await scaffoldSeo({ seo: true, framework: 'next' });
-    for (const f of ['src/lib/seo.ts', 'src/app/robots.ts', 'src/app/sitemap.ts', 'src/app/opengraph-image.tsx']) {
+    for (const f of [
+      'src/lib/seo.ts',
+      'src/app/robots.ts',
+      'src/app/sitemap.ts',
+      'src/app/opengraph-image.tsx',
+    ]) {
       expect(await exists(path.join(config.webDir, f))).toBe(true);
     }
   });

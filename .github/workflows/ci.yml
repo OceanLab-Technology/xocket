@@ -30,8 +30,16 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm format:check
+
       - run: pnpm build
       - run: pnpm test
+
       - name: Fail if the published package would omit templates
         run: |
           pnpm pack --pack-destination /tmp >/dev/null

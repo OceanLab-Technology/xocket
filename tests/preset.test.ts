@@ -124,9 +124,8 @@ describe('applyPresetModules', () => {
     const { testConfig } = await import('./helpers.js');
     const { generateWorkspace } = await import('../src/generators/monorepo/workspace.js');
     const { generateProject } = await import('../src/generators/project.js');
-    const { writeManifest, createManifest, readManifest } = await import(
-      '../src/utils/manifest.js'
-    );
+    const { writeManifest, createManifest, readManifest } =
+      await import('../src/utils/manifest.js');
     const { applyPresetModules } = await import('../src/cli/commands/apply-modules.js');
     const { Steps } = await import('../src/ui/steps.js');
 
@@ -154,16 +153,11 @@ describe('applyPresetModules', () => {
     expect(found).not.toBeNull();
     expect(Object.keys(found!.manifest.services)).toContain('svc-a');
     expect(found!.manifest.db?.orm).toBe('drizzle');
-    expect(found!.manifest.modules).toEqual(
-      expect.arrayContaining(['backend', 'db', 'docker']),
-    );
+    expect(found!.manifest.modules).toEqual(expect.arrayContaining(['backend', 'db', 'docker']));
 
     // docker ran last, so compose must list the service the preset added
     // after it in the source list.
-    const compose = await fs.readFile(
-      path.join(config.rootDir, 'docker-compose.yml'),
-      'utf-8',
-    );
+    const compose = await fs.readFile(path.join(config.rootDir, 'docker-compose.yml'), 'utf-8');
     expect(compose).toContain('svc-a:');
     expect(compose).toContain('postgres:');
   });

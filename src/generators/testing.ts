@@ -23,7 +23,9 @@ export async function generateTesting(config: Config, targetDir: string) {
     '@testing-library/jest-dom': DEPS['@testing-library/jest-dom'],
     '@testing-library/user-event': DEPS['@testing-library/user-event'],
     jsdom: DEPS.jsdom,
-    ...(framework === 'next' || isExpo ? { '@vitejs/plugin-react': DEPS['@vitejs/plugin-react'] } : {}),
+    ...(framework === 'next' || isExpo
+      ? { '@vitejs/plugin-react': DEPS['@vitejs/plugin-react'] }
+      : {}),
   });
   pkg = addScript(pkg, 'test', 'vitest run');
   pkg = addScript(pkg, 'test:watch', 'vitest');

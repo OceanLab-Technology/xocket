@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest a stack option, module, or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation, not the solution. What do you end up doing by hand today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: A command, a flag, a module — whatever shape it takes.
+      placeholder: xocket add <something>
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - A new stack option (framework, state, backend…)
+        - A new `xocket add` module
+        - A new backend service language
+        - CLI behaviour or output
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including "keep doing it by hand" — that is useful signal.

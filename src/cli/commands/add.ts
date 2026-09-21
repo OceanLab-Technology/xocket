@@ -58,9 +58,10 @@ function configFromManifest(manifest: Manifest, rootDir: string): Config {
   };
 }
 
-export async function run(
-  { module, ...rawFlags }: AddFlags & { module?: string } = {},
-): Promise<void> {
+export async function run({
+  module,
+  ...rawFlags
+}: AddFlags & { module?: string } = {}): Promise<void> {
   console.log(compactBanner(module ? `add ${module}` : 'add'));
   console.log();
 
@@ -178,9 +179,11 @@ async function addExpo(
   await runInstall(rootDir, opts.wantsInstall);
 
   p.note(
-    ['pnpm --filter @' + config.projectName + '/expo start', '', 'Then press i (iOS) or a (Android).'].join(
-      '\n',
-    ),
+    [
+      'pnpm --filter @' + config.projectName + '/expo start',
+      '',
+      'Then press i (iOS) or a (Android).',
+    ].join('\n'),
     'Next steps',
   );
   p.outro(t.success('Done.'));
@@ -282,12 +285,7 @@ async function addBackend(
 
 // ── seo ─────────────────────────────────────────────────────────────────────
 
-async function addSeo(
-  config: Config,
-  rootDir: string,
-  manifest: Manifest,
-  wantsInstall: boolean,
-) {
+async function addSeo(config: Config, rootDir: string, manifest: Manifest, wantsInstall: boolean) {
   if (manifest.apps.web?.seo) {
     cancel('The SEO module is already installed in apps/web.', 0);
   }
@@ -522,12 +520,7 @@ async function addAgent(
 
 // ── docker ──────────────────────────────────────────────────────────────────
 
-async function addDocker(
-  config: Config,
-  rootDir: string,
-  manifest: Manifest,
-  flags: AddFlags,
-) {
+async function addDocker(config: Config, rootDir: string, manifest: Manifest, flags: AddFlags) {
   let target = flags.target;
   if (!target) {
     if (flags.yes) {
@@ -574,10 +567,7 @@ async function addDocker(
     );
   }
   if (config.framework === 'next') {
-    notes.push(
-      '',
-      t.warn("The Next Dockerfile expects output: 'standalone' in next.config.ts."),
-    );
+    notes.push('', t.warn("The Next Dockerfile expects output: 'standalone' in next.config.ts."));
   }
 
   p.note(notes.join('\n'), 'Next steps');
@@ -594,9 +584,7 @@ async function runInstall(rootDir: string, wanted: boolean) {
   } catch (err) {
     spinner.stop(t.error(`${glyph.cross} Install failed.`));
     console.error(err instanceof Error ? err.message : err);
-    console.error(
-      t.warn('\nThe module files were written, but its dependencies are missing.'),
-    );
+    console.error(t.warn('\nThe module files were written, but its dependencies are missing.'));
     console.error(t.warn('Run `pnpm install` in the project root before building.'));
     process.exitCode = 1;
   }

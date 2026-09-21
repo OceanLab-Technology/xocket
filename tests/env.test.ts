@@ -39,7 +39,14 @@ describe('nestJsx', () => {
   });
 
   it('indents each level by two spaces, outermost first', () => {
-    const out = nestJsx('<App />', [['A', 'A'], ['B', 'B']], '');
+    const out = nestJsx(
+      '<App />',
+      [
+        ['A', 'A'],
+        ['B', 'B'],
+      ],
+      '',
+    );
     expect(out).toBe('<A>\n  <B>\n    <App />\n  </B>\n</A>');
   });
 });

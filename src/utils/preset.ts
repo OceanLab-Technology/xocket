@@ -10,9 +10,10 @@ import { presetSchema, formatZodError, type Preset } from '../schema.js';
  * of the CLI.
  */
 export async function loadPreset(source: string): Promise<Preset> {
-  const raw = source.startsWith('http://') || source.startsWith('https://')
-    ? await fetchPreset(source)
-    : await readPresetFile(source);
+  const raw =
+    source.startsWith('http://') || source.startsWith('https://')
+      ? await fetchPreset(source)
+      : await readPresetFile(source);
 
   let parsed: unknown;
   try {

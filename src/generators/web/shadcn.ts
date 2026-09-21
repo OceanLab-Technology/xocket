@@ -15,10 +15,7 @@ export async function generateShadcn(config: Config) {
   const { framework, webDir } = config;
 
   let pkg = await readPkg(webDir);
-  pkg = addDeps(
-    pkg,
-    deps('clsx', 'tailwind-merge', 'class-variance-authority', 'lucide-react'),
-  );
+  pkg = addDeps(pkg, deps('clsx', 'tailwind-merge', 'class-variance-authority', 'lucide-react'));
   await writePkg(webDir, pkg);
 
   const isNext = framework === 'next';

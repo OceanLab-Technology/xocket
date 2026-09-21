@@ -30,14 +30,17 @@ describe('backend services', () => {
     expect(ws).toContain("'services/*'");
   });
 
-  it.each(BACKEND_LANGS)('gives %s a package.json shim with build and dev scripts', async (lang) => {
-    const pkg = await readJson<Record<string, any>>(
-      path.join(rootDir, 'services', `${lang}-api`, 'package.json'),
-    );
-    expect(pkg.name).toBe(`${lang}-api`);
-    expect(pkg.scripts.build).toBeTruthy();
-    expect(pkg.scripts.dev).toBeTruthy();
-  });
+  it.each(BACKEND_LANGS)(
+    'gives %s a package.json shim with build and dev scripts',
+    async (lang) => {
+      const pkg = await readJson<Record<string, any>>(
+        path.join(rootDir, 'services', `${lang}-api`, 'package.json'),
+      );
+      expect(pkg.name).toBe(`${lang}-api`);
+      expect(pkg.scripts.build).toBeTruthy();
+      expect(pkg.scripts.dev).toBeTruthy();
+    },
+  );
 
   it.each(BACKEND_LANGS)('gives %s a turbo.json declaring its build outputs', async (lang) => {
     const turbo = await readJson<Record<string, any>>(
@@ -49,9 +52,11 @@ describe('backend services', () => {
 
   it('shells out to each native toolchain rather than to node', async () => {
     const script = async (lang: string) =>
-      (await readJson<Record<string, any>>(
-        path.join(rootDir, 'services', `${lang}-api`, 'package.json'),
-      )).scripts.build;
+      (
+        await readJson<Record<string, any>>(
+          path.join(rootDir, 'services', `${lang}-api`, 'package.json'),
+        )
+      ).scripts.build;
 
     expect(await script('go')).toContain('go build');
     expect(await script('rust')).toContain('cargo build');
@@ -69,22 +74,17 @@ describe('backend services', () => {
   it('converts hyphenated names into valid crate and module identifiers', async () => {
     const config = testConfig(cwd, { projectName: 'poly' });
     await generateBackend(config, rootDir, { lang: 'rust', name: 'orders-api' });
-    const cargo = await fs.readFile(
-      path.join(rootDir, 'services/orders-api/Cargo.toml'),
-      'utf-8',
-    );
+    const cargo = await fs.readFile(path.join(rootDir, 'services/orders-api/Cargo.toml'), 'utf-8');
     expect(cargo).toContain('name = "orders_api"');
 
     await generateBackend(config, rootDir, { lang: 'python', name: 'billing-api' });
-    expect(await exists(path.join(rootDir, 'services/billing-api/billing_api/main.py'))).toBe(
-      true,
-    );
+    expect(await exists(path.join(rootDir, 'services/billing-api/billing_api/main.py'))).toBe(true);
   });
 
   it('refuses to overwrite an existing service', async () => {
     const config = testConfig(cwd, { projectName: 'poly' });
-    await expect(
-      generateBackend(config, rootDir, { lang: 'go', name: 'go-api' }),
-    ).rejects.toThrow(/already exists/);
+    await expect(generateBackend(config, rootDir, { lang: 'go', name: 'go-api' })).rejects.toThrow(
+      /already exists/,
+    );
   });
 });

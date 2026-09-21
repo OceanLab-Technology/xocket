@@ -114,10 +114,7 @@ describe('auth-ui module', () => {
   it('wires the form to the supabase client', async () => {
     const config = await scaffold({ backend: 'supabase', framework: 'next' });
     await generateAuthUi(config);
-    const client = await fs.readFile(
-      path.join(config.webDir, 'src/lib/auth/client.ts'),
-      'utf-8',
-    );
+    const client = await fs.readFile(path.join(config.webDir, 'src/lib/auth/client.ts'), 'utf-8');
     expect(client).toContain('signInWithPassword');
     expect(client).toContain("'use client'");
   });
@@ -125,10 +122,7 @@ describe('auth-ui module', () => {
   it('wires the form to the cognito client', async () => {
     const config = await scaffold({ backend: 'cognito', framework: 'react' });
     await generateAuthUi(config);
-    const client = await fs.readFile(
-      path.join(config.webDir, 'src/lib/auth/client.ts'),
-      'utf-8',
-    );
+    const client = await fs.readFile(path.join(config.webDir, 'src/lib/auth/client.ts'), 'utf-8');
     expect(client).toContain('aws-amplify/auth');
     // Vite apps have no client boundary directive.
     expect(client).not.toContain("'use client'");
@@ -222,7 +216,11 @@ describe('docker module', () => {
   });
 
   it('never runs a container as root', async () => {
-    for (const f of ['services/go-svc/Dockerfile', 'services/py-svc/Dockerfile', 'apps/web/Dockerfile']) {
+    for (const f of [
+      'services/go-svc/Dockerfile',
+      'services/py-svc/Dockerfile',
+      'apps/web/Dockerfile',
+    ]) {
       const body = await fs.readFile(path.join(rootDir, f), 'utf-8');
       expect(body).toMatch(/USER\s+(?!root)/);
     }
@@ -279,10 +277,7 @@ describe('testing + ci generators', () => {
   });
 
   it('generates CI that runs every gate', async () => {
-    const ci = await fs.readFile(
-      path.join(config.rootDir, '.github/workflows/ci.yml'),
-      'utf-8',
-    );
+    const ci = await fs.readFile(path.join(config.rootDir, '.github/workflows/ci.yml'), 'utf-8');
     for (const step of ['pnpm lint', 'pnpm type-check', 'pnpm test', 'pnpm build']) {
       expect(ci).toContain(step);
     }
@@ -290,10 +285,7 @@ describe('testing + ci generators', () => {
   });
 
   it('groups dependabot updates so CI stays meaningful', async () => {
-    const db = await fs.readFile(
-      path.join(config.rootDir, '.github/dependabot.yml'),
-      'utf-8',
-    );
+    const db = await fs.readFile(path.join(config.rootDir, '.github/dependabot.yml'), 'utf-8');
     expect(db).toContain('package-ecosystem: npm');
     expect(db).toContain('github-actions');
   });

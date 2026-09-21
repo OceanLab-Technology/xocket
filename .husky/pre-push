@@ -1,0 +1,3 @@
+# Cheap gates only — the full scaffold matrix belongs in CI.
+pnpm run type-check
+pnpm test

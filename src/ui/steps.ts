@@ -36,7 +36,8 @@ export class Steps {
 
   /** Update the in-flight phase's text without advancing the counter. */
   update(detail: string): void {
-    if (this.spinner) this.spinner.text = `${this.spinner.text} ${t.muted(glyph.dot)} ${t.muted(detail)}`;
+    if (this.spinner)
+      this.spinner.text = `${this.spinner.text} ${t.muted(glyph.dot)} ${t.muted(detail)}`;
   }
 
   /** Mark the current phase complete. */

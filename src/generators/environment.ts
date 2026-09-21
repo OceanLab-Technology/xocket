@@ -42,9 +42,7 @@ export async function generateEnvironment(
           SENTRY_DSN: '',
           SENTRY_ORG: 'your-org',
           SENTRY_PROJECT: 'your-project',
-          ...(backend === 'supabase'
-            ? { SUPABASE_SERVICE_ROLE_KEY: 'your-service-role-key' }
-            : {}),
+          ...(backend === 'supabase' ? { SUPABASE_SERVICE_ROLE_KEY: 'your-service-role-key' } : {}),
         }
       : {};
 

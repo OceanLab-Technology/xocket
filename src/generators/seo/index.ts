@@ -55,14 +55,7 @@ async function addSiteUrlEnv(config: Config, targetDir: string) {
     if (body.includes(key)) continue;
 
     const value = name === '.env.production' ? 'https://example.com' : 'http://localhost:5173';
-    await fs.writeFile(
-      file,
-      body.replace(
-        /^(# Public.*\n)/m,
-        `$1${key}=${value}\n`,
-      ),
-      'utf-8',
-    );
+    await fs.writeFile(file, body.replace(/^(# Public.*\n)/m, `$1${key}=${value}\n`), 'utf-8');
   }
 }
 

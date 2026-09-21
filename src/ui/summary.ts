@@ -14,9 +14,7 @@ export interface SummarySection {
 /** A key/value block with aligned values. */
 export function keyValues(rows: SummaryRow[], indent = '  '): string {
   const width = Math.max(...rows.map((r) => r.label.length));
-  return rows
-    .map((r) => `${indent}${pc.bold(r.label.padEnd(width))}  ${r.value}`)
-    .join('\n');
+  return rows.map((r) => `${indent}${pc.bold(r.label.padEnd(width))}  ${r.value}`).join('\n');
 }
 
 /** A two-column checklist, so long feature lists do not run off the screen. */

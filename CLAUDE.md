@@ -4,19 +4,19 @@ A Node CLI (TypeScript, ESM) that scaffolds pnpm + Turborepo monorepos.
 
 ## Layout
 
-| Path | Role |
-|---|---|
-| `src/index.ts` | Commander entry point; every flag is declared here |
-| `src/schema.ts` | **All** user-facing choices, as zod schemas. Prompts, flags, presets and the on-disk manifest validate against these |
-| `src/versions.ts` | **Every** dependency version Xocket emits. Never inline a range in a generator |
-| `src/version.ts` | CLI version, read from package.json — do not hardcode it |
-| `src/ui/` | Terminal styling: theme, banner, stepped progress, summary blocks |
-| `src/cli/` | Commands (`create`, `add`, `doctor`), prompts, config derivation |
-| `src/generators/` | One module per concern; each takes a `Config` and writes files |
-| `src/utils/env.ts` | Public-env conventions per target (`VITE_` / `NEXT_PUBLIC_` / `EXPO_PUBLIC_`) |
-| `src/utils/preset.ts` | Org preset loading and validation |
-| `templates/` | Files copied verbatim, then patched by generators |
-| `tests/` | Vitest; `generators.test.ts` pins previously-shipped bugs |
+| Path                  | Role                                                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/index.ts`        | Commander entry point; every flag is declared here                                                                   |
+| `src/schema.ts`       | **All** user-facing choices, as zod schemas. Prompts, flags, presets and the on-disk manifest validate against these |
+| `src/versions.ts`     | **Every** dependency version Xocket emits. Never inline a range in a generator                                       |
+| `src/version.ts`      | CLI version, read from package.json — do not hardcode it                                                             |
+| `src/ui/`             | Terminal styling: theme, banner, stepped progress, summary blocks                                                    |
+| `src/cli/`            | Commands (`create`, `add`, `doctor`), prompts, config derivation                                                     |
+| `src/generators/`     | One module per concern; each takes a `Config` and writes files                                                       |
+| `src/utils/env.ts`    | Public-env conventions per target (`VITE_` / `NEXT_PUBLIC_` / `EXPO_PUBLIC_`)                                        |
+| `src/utils/preset.ts` | Org preset loading and validation                                                                                    |
+| `templates/`          | Files copied verbatim, then patched by generators                                                                    |
+| `tests/`              | Vitest; `generators.test.ts` pins previously-shipped bugs                                                            |
 
 ## Rules that exist for a reason
 

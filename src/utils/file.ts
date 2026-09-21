@@ -9,7 +9,11 @@ export async function copyFile(src: string, dest: string): Promise<void> {
   await fs.copy(src, dest);
 }
 
-export async function replaceInFile(filePath: string, searchValue: string | RegExp, replaceValue: string): Promise<void> {
+export async function replaceInFile(
+  filePath: string,
+  searchValue: string | RegExp,
+  replaceValue: string,
+): Promise<void> {
   if (!(await fs.pathExists(filePath))) return;
   const content = await fs.readFile(filePath, 'utf-8');
   await fs.writeFile(filePath, content.replace(searchValue, replaceValue));

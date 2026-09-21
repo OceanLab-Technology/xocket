@@ -48,10 +48,7 @@ export async function generateWorkspace(config: Config) {
     prettier: '@xocket/prettier-config',
   };
 
-  await writeFile(
-    path.join(rootDir, 'package.json'),
-    JSON.stringify(rootPkg, null, 2) + '\n',
-  );
+  await writeFile(path.join(rootDir, 'package.json'), JSON.stringify(rootPkg, null, 2) + '\n');
 
   await writeFile(
     path.join(rootDir, 'pnpm-workspace.yaml'),
