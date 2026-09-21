@@ -203,3 +203,34 @@ describe('seo module', () => {
     expect(await exists(path.join(config.webDir, 'src/lib/use-seo.ts'))).toBe(true);
   });
 });
+
+describe('template copying', () => {
+  let cwd: string;
+
+  beforeAll(async () => {
+    cwd = await tmpDir();
+  });
+  afterAll(async () => {
+    await fs.remove(cwd);
+  });
+
+  it('filters on the path relative to the template root, not the absolute path', async () => {
+    const { templateCopyFilter } = await import('../src/generators/project.js');
+
+    // A globally installed CLI always lives under .../lib/node_modules/xocket/.
+    // Testing the absolute path matched the node_modules rule for every file,
+    // so `npx xocket` copied nothing and the app had no package.json.
+    const root = '/usr/local/lib/node_modules/xocket/templates/next';
+    const accept = templateCopyFilter(root);
+
+    expect(accept(root)).toBe(true);
+    expect(accept(path.join(root, 'package.json'))).toBe(true);
+    expect(accept(path.join(root, 'src/app/page.tsx'))).toBe(true);
+
+    // Still excluded, but only when genuinely inside the template.
+    expect(accept(path.join(root, 'node_modules/react/index.js'))).toBe(false);
+    expect(accept(path.join(root, 'package-lock.json'))).toBe(false);
+    expect(accept(path.join(root, 'pnpm-lock.yaml'))).toBe(false);
+    expect(accept(path.join(root, '.DS_Store'))).toBe(false);
+  });
+});

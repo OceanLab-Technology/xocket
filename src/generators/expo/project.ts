@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { readPkg, writePkg } from '../../utils/pkg.js';
 import { writeFile } from '../../utils/file.js';
-import { templateDir, TEMPLATE_COPY_FILTER } from '../project.js';
+import { templateDir, templateCopyFilter } from '../project.js';
 import { DEPS } from '../../versions.js';
 
 /**
@@ -12,7 +12,8 @@ import { DEPS } from '../../versions.js';
 export async function generateExpoProject(config: Config, targetDir: string) {
   const { projectName } = config;
 
-  await fs.copy(templateDir('expo'), targetDir, { filter: TEMPLATE_COPY_FILTER });
+  const from = templateDir('expo');
+  await fs.copy(from, targetDir, { filter: templateCopyFilter(from) });
 
   // app.json carries the project's own name/slug/scheme.
   const appJsonPath = path.join(targetDir, 'app.json');

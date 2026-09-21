@@ -7,12 +7,29 @@ import { DEPS } from '../versions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** Files that must never be copied out of a template directory. */
-export const TEMPLATE_COPY_FILTER = (src: string): boolean =>
-  !src.includes('node_modules') &&
-  !src.endsWith('package-lock.json') &&
-  !src.endsWith('pnpm-lock.yaml') &&
-  !src.endsWith('.DS_Store');
+/**
+ * Files that must never be copied out of a template directory.
+ *
+ * The check is made against the path *relative to the template root*. Testing
+ * the absolute path meant that a globally installed CLI — which always lives
+ * under .../lib/node_modules/xocket/ — matched the node_modules rule for every
+ * file and copied nothing, so `npx xocket` produced an app directory with no
+ * package.json in it.
+ */
+export function templateCopyFilter(templateRoot: string) {
+  return (src: string): boolean => {
+    const rel = path.relative(templateRoot, src);
+
+    // The template root itself; fs-extra asks about it first.
+    if (rel === '') return true;
+
+    const segments = rel.split(path.sep);
+    if (segments.includes('node_modules')) return false;
+
+    const base = segments[segments.length - 1]!;
+    return !['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '.DS_Store'].includes(base);
+  };
+}
 
 /** Resolve a template directory for both `tsx src/` and the published build. */
 export function templateDir(name: string): string {
@@ -29,9 +46,8 @@ export function templateDir(name: string): string {
 export async function generateProject(config: Config) {
   const { projectName, framework, webDir } = config;
 
-  await fs.copy(templateDir(framework === 'next' ? 'next' : 'react'), webDir, {
-    filter: TEMPLATE_COPY_FILTER,
-  });
+  const from = templateDir(framework === 'next' ? 'next' : 'react');
+  await fs.copy(from, webDir, { filter: templateCopyFilter(from) });
 
   const pkg = await readPkg(webDir);
   pkg.name = `@${projectName}/web`;
