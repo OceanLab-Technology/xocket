@@ -22,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -70,9 +70,9 @@ jobs:
             aiSeo: true
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -144,9 +144,9 @@ jobs:
         framework: [react, next]
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -187,9 +187,9 @@ jobs:
         lang: [node, go, rust, python]
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -262,9 +262,9 @@ jobs:
             framework: next
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -296,9 +296,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      # No `version:` — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22

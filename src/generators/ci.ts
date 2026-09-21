@@ -1,7 +1,6 @@
 import type { Config } from '../types.js';
 import path from 'path';
 import { writeFile } from '../utils/file.js';
-import { PNPM_VERSION } from '../versions.js';
 
 /**
  * Generates the project's own CI workflow.
@@ -36,9 +35,9 @@ jobs:
           # Turborepo compares against the base commit for affected-only runs.
           fetch-depth: 0
 
+      # No version input — the action reads packageManager from package.json,
+      # and passing both is an error.
       - uses: pnpm/action-setup@v6
-        with:
-          version: ${PNPM_VERSION.split('.')[0]}
 
       - uses: actions/setup-node@v7
         with:
