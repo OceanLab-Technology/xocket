@@ -66,13 +66,22 @@ jobs:
       - name: Build the standalone tarball
         run: pnpm build:standalone
 
+      # Stage both artifacts into one flat directory. Uploading several globs
+      # from different roots makes the artifact's internal layout depend on
+      # their common ancestor, which consumers then have to guess at.
+      - name: Stage release artifacts
+        run: |
+          set -eux
+          mkdir -p artifacts
+          cp /tmp/xocket-*.tgz artifacts/
+          cp build/xocket-*.tar.gz artifacts/
+          cp build/xocket-*.tar.gz.sha256 artifacts/
+          ls -l artifacts
+
       - uses: actions/upload-artifact@v7
         with:
           name: package
-          path: |
-            /tmp/xocket-*.tgz
-            build/xocket-*.tar.gz
-            build/xocket-*.tar.gz.sha256
+          path: artifacts/
 
   # A published CLI has to produce a working project, not merely install. This
   # installs the real tarball and scaffolds with it.
@@ -141,7 +150,8 @@ jobs:
         run: |
           set -eux
           mkdir -p srv/releases/download/v"$VERSION"
-          cp /tmp/pkg/build/xocket-*.tar.gz* srv/releases/download/v"$VERSION"/
+          cp /tmp/pkg/xocket-"$VERSION".tar.gz srv/releases/download/v"$VERSION"/
+          cp /tmp/pkg/xocket-"$VERSION".tar.gz.sha256 srv/releases/download/v"$VERSION"/
           (cd srv && python3 -m http.server 8799 &)
           sleep 2
 
