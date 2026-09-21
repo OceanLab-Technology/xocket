@@ -130,6 +130,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # The installed CLI shells out to pnpm, and so does the project it
+      # generates — its preflight refuses to run without it.
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
       - uses: actions/setup-node@v7
         with:
           node-version: 22
