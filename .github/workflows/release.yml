@@ -194,6 +194,51 @@ jobs:
         env:
           VERSION: ${{ needs.verify.outputs.version }}
 
+  # Deliberately independent of npm. The install script downloads its tarball
+  # from the GitHub release, so coupling the two would mean a missing npm
+  # credential also breaks `curl | sh`.
+  release:
+    name: GitHub release
+    needs: [verify, smoke, installer]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+          path: /tmp/pkg
+
+      - name: Publish the release with the install tarball attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eux
+          # Written to a file so the fenced block does not have to survive YAML.
+          {
+            printf 'See [CHANGELOG.md](https://github.com/%s/blob/main/CHANGELOG.md) for the full list of changes.\n\n' "$REPO"
+            printf '## Install\n\n'
+            printf '```bash\n'
+            printf 'curl -fsSL https://get.xocket.sh | sh\n'
+            printf '```\n\n'
+            printf 'Or without installing:\n\n'
+            printf '```bash\n'
+            printf 'npx xocket@%s create my-app\n' "$VERSION"
+            printf '```\n'
+          } > notes.md
+
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes-file notes.md \
+            --verify-tag \
+            "/tmp/pkg/xocket-$VERSION.tar.gz" \
+            "/tmp/pkg/xocket-$VERSION.tar.gz.sha256"
+
   publish:
     name: Publish to npm
     needs: [verify, smoke, installer]
@@ -229,24 +274,3 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: GitHub release
-        if: github.ref_type == 'tag'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.verify.outputs.version }}
-          REPO: ${{ github.repository }}
-        run: |
-          # Written to a file so the fenced block does not have to survive YAML.
-          {
-            printf 'See [CHANGELOG.md](https://github.com/%s/blob/main/CHANGELOG.md) for the full list of changes.\n\n' "$REPO"
-            printf '```bash\n'
-            printf 'npx xocket@%s create my-app\n' "$VERSION"
-            printf '```\n'
-          } > notes.md
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
-            --notes-file notes.md \
-            --verify-tag \
-            build/xocket-"$VERSION".tar.gz \
-            build/xocket-"$VERSION".tar.gz.sha256

@@ -130,3 +130,5 @@ dist
 *.swp
 *.swo
 build/
+infra/**/node_modules
+infra/**/.wrangler

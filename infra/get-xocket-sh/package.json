@@ -1,0 +1,15 @@
+{
+  "name": "get-xocket-sh",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260921.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.134.0"
+  }
+}

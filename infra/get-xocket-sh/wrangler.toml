@@ -1,0 +1,19 @@
+# Serves https://get.xocket.sh — the install script for the Xocket CLI.
+#
+#   curl -fsSL https://get.xocket.sh | sh
+#
+# Deploy:  pnpm --filter get-xocket-sh deploy   (or: wrangler deploy)
+name = "get-xocket-sh"
+main = "src/worker.ts"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+# A custom domain, not a route: Cloudflare manages the DNS record and the
+# certificate, so there is no A record to keep in sync by hand.
+routes = [{ pattern = "get.xocket.sh", custom_domain = true }]
+
+[vars]
+# The script is served from the repository, so a fix ships by merging to main
+# rather than by redeploying this worker.
+REPO = "OceanLab-Technology/xocket"
+REF = "main"

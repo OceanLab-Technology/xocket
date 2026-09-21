@@ -40,8 +40,10 @@ XOCKET_BIN=~/bin      curl -fsSL https://get.xocket.sh | sh   # choose the bin d
 rm -rf ~/.local/share/xocket ~/.local/bin/xocket             # uninstall
 ```
 
-Prefer to read it first? It is [`scripts/install.sh`](scripts/install.sh) — and
-reading a script before piping it to a shell is a good habit.
+Prefer to read it first? It is [`scripts/install.sh`](scripts/install.sh), served
+by [a small Cloudflare Worker](infra/get-xocket-sh) — and reading a script
+before piping it to a shell is a good habit. Opening https://get.xocket.sh in a
+browser sends you here rather than dumping shell at you.
 
 </details>
 
