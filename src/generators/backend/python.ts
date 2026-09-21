@@ -24,7 +24,9 @@ export async function generatePythonService(_config: Config, targetDir: string, 
         private: true,
         scripts: {
           dev: `uv run uvicorn ${moduleName}.main:app --reload --port ${port}`,
-          build: 'uv sync --frozen',
+          // No --frozen: a fresh service has no uv.lock yet, and uv sync
+          // creates one. CI should commit the lock and add --frozen itself.
+          build: 'uv sync',
           start: `uv run uvicorn ${moduleName}.main:app --port ${port}`,
           lint: 'uv run ruff check .',
           'type-check': 'uv run ruff check .',

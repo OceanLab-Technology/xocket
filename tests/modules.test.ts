@@ -298,3 +298,59 @@ describe('testing + ci generators', () => {
     expect(db).toContain('github-actions');
   });
 });
+
+describe('prisma 7 shape', () => {
+  let cwd: string;
+  let dir: string;
+
+  beforeAll(async () => {
+    cwd = await tmpDir();
+    const config = testConfig(cwd, { projectName: 'pz' });
+    await generateWorkspace(config);
+    dir = await generateDb(config, config.rootDir, { orm: 'prisma' });
+  });
+  afterAll(async () => fs.remove(cwd));
+
+  it('keeps the connection URL out of schema.prisma', async () => {
+    const schema = await fs.readFile(path.join(dir, 'prisma/schema.prisma'), 'utf-8');
+    // Prisma 7 rejects a datasource `url` with P1012.
+    expect(schema).not.toContain('url');
+    expect(schema).toContain('provider = "postgresql"');
+  });
+
+  it('puts the URL in prisma.config.ts, tolerating an unset DATABASE_URL', async () => {
+    const cfg = await fs.readFile(path.join(dir, 'prisma.config.ts'), 'utf-8');
+    expect(cfg).toContain('defineConfig');
+    // postinstall runs `prisma generate` before the user has set DATABASE_URL.
+    expect(cfg).toContain("process.env.DATABASE_URL ?? ''");
+  });
+
+  it('ships the driver adapter Prisma 7 requires', async () => {
+    const pkg = await readJson<Record<string, any>>(path.join(dir, 'package.json'));
+    expect(pkg.dependencies).toHaveProperty('@prisma/adapter-pg');
+    expect(pkg.dependencies).toHaveProperty('pg');
+
+    const src = await fs.readFile(path.join(dir, 'src/index.ts'), 'utf-8');
+    expect(src).toContain('PrismaPg');
+    expect(src).toContain('adapter');
+  });
+});
+
+describe('python service', () => {
+  let cwd: string;
+
+  beforeAll(async () => {
+    cwd = await tmpDir();
+  });
+  afterAll(async () => fs.remove(cwd));
+
+  it('does not pass --frozen, which needs a uv.lock that does not exist yet', async () => {
+    const { generateBackend } = await import('../src/generators/backend/index.js');
+    const config = testConfig(cwd, { projectName: 'py' });
+    await generateWorkspace(config);
+    const dir = await generateBackend(config, config.rootDir, { lang: 'python', name: 'svc' });
+    const pkg = await readJson<Record<string, any>>(path.join(dir, 'package.json'));
+    expect(pkg.scripts.build).toBe('uv sync');
+    expect(pkg.scripts.build).not.toContain('--frozen');
+  });
+});

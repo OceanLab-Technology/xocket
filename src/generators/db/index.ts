@@ -205,6 +205,12 @@ app that consumes it — not just here.
 
 // ── Prisma ───────────────────────────────────────────────────────────────────
 
+/**
+ * Prisma 7 moved the connection URL out of schema.prisma and into
+ * prisma.config.ts, and requires a driver adapter on the client. Generating the
+ * 5.x/6.x shape produces P1012: "The datasource property `url` is no longer
+ * supported in schema files."
+ */
 async function generatePrisma(pkgDir: string) {
   await writeFile(
     path.join(pkgDir, 'package.json'),
@@ -228,6 +234,8 @@ async function generatePrisma(pkgDir: string) {
         },
         dependencies: {
           '@prisma/client': DEPS['@prisma/client'],
+          '@prisma/adapter-pg': DEPS['@prisma/adapter-pg'],
+          pg: DEPS.pg,
         },
         devDependencies: {
           '@xocket/typescript-config': 'workspace:*',
@@ -235,6 +243,7 @@ async function generatePrisma(pkgDir: string) {
           '@xocket/prettier-config': 'workspace:*',
           prisma: DEPS.prisma,
           '@types/node': DEPS['@types/node'],
+          '@types/pg': DEPS['@types/pg'],
           typescript: DEPS.typescript,
           eslint: DEPS.eslint,
         },
@@ -245,6 +254,22 @@ async function generatePrisma(pkgDir: string) {
     ) + '\n',
   );
 
+  await writeFile(
+    path.join(pkgDir, 'prisma.config.ts'),
+    `import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  datasource: {
+    // \`prisma generate\` never opens a connection, so an empty value keeps a
+    // fresh install working before DATABASE_URL is set. migrate and studio
+    // fail loudly if it is still missing.
+    url: process.env.DATABASE_URL ?? '',
+  },
+})
+`,
+  );
+
   await ensureDir(path.join(pkgDir, 'prisma'));
   await writeFile(
     path.join(pkgDir, 'prisma', 'schema.prisma'),
@@ -252,9 +277,9 @@ async function generatePrisma(pkgDir: string) {
   provider = "prisma-client-js"
 }
 
+// The connection URL lives in prisma.config.ts from Prisma 7 onward.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -272,7 +297,17 @@ model User {
   await ensureDir(path.join(pkgDir, 'src'));
   await writeFile(
     path.join(pkgDir, 'src', 'index.ts'),
-    `import { PrismaClient } from '@prisma/client'
+    `import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
+
+const connectionString = process.env.DATABASE_URL
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set. Copy packages/db/.env.example and fill it in.')
+}
+
+// Prisma 7 talks to the database through a driver adapter.
+const adapter = new PrismaPg({ connectionString })
 
 // Next.js dev-mode hot reload re-evaluates modules, which would otherwise open
 // a new pool on every change until Postgres refuses connections.
@@ -281,6 +316,7 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 
@@ -298,7 +334,7 @@ export * from '@prisma/client'
       {
         extends: '@xocket/typescript-config/node.json',
         compilerOptions: { noEmit: true },
-        include: ['src'],
+        include: ['src', 'prisma.config.ts'],
         exclude: ['node_modules'],
       },
       null,
@@ -344,6 +380,11 @@ pnpm --filter @xocket/db db:studio    # browse the data
 
 Prisma Client is generated code, so \`postinstall\` runs \`prisma generate\`.
 If types look stale after editing the schema, run it again.
+
+## Prisma 7 notes
+
+- The connection URL lives in \`prisma.config.ts\`, not \`schema.prisma\`.
+- The client needs a driver adapter — this package uses \`@prisma/adapter-pg\`.
 `,
   );
 }

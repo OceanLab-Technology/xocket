@@ -103,6 +103,10 @@ export const DEPS = {
   postgres: '^3.4.9',
   '@prisma/client': '^7.10.0',
   prisma: '^7.10.0',
+  // Prisma 7 requires a driver adapter; the schema no longer carries the URL.
+  '@prisma/adapter-pg': '^7.10.0',
+  pg: '^8.23.0',
+  '@types/pg': '^8.23.1',
 
   // ── MCP ───────────────────────────────────────────────────────────────────
   '@modelcontextprotocol/sdk': '^1.30.0',
