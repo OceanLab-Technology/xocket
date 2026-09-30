@@ -1,0 +1,31 @@
+{
+  "name": "worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.13.8",
+    "@hono/node-server": "^2.1.1",
+    "zod": "^4.6.5",
+    "@launchautopilot/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@xocket/typescript-config": "workspace:*",
+    "@xocket/eslint-config": "workspace:*",
+    "@xocket/prettier-config": "workspace:*",
+    "@types/node": "^26.6.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "eslint": "^9.39.5"
+  },
+  "prettier": "@xocket/prettier-config"
+}

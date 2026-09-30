@@ -1,0 +1,424 @@
+<title>Launch Visibility Platform Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument-report — sticky contents rail on wide screens, one reading column, data set in mono like a lab readout */
+:root {
+  --bg: #f4f6f7;
+  --surface: #ffffff;
+  --fg: #15212b;
+  --muted: #56666f;
+  --rule: #d6dee3;
+  --accent: #0d6a86;
+  --accent-soft: #e2eff3;
+  --signal: #a8661a;
+  --good: #2f7a4a;
+  --bad: #a83d3d;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1519; --surface: #151f25; --fg: #e3eaee; --muted: #93a3ac; --rule: #2a3840;
+    --accent: #5cb8d3; --accent-soft: #16303a; --signal: #e0a45a; --good: #6cc38c; --bad: #e58585;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1519; --surface: #151f25; --fg: #e3eaee; --muted: #93a3ac; --rule: #2a3840;
+  --accent: #5cb8d3; --accent-soft: #16303a; --signal: #e0a45a; --good: #6cc38c; --bad: #e58585;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--font-body); padding-inline: 20px; padding-block: 0 64px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.shell { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; padding-block: 40px; font-size: 13.5px; }
+nav.toc p { font: 500 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover { color: var(--fg); }
+main { min-width: 0; max-width: 780px; padding-block: 40px; }
+header.top { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(34px, 5.4vw, 52px)/1.05 var(--font-display); letter-spacing: -.02em; margin: 14px 0 16px; text-wrap: balance; }
+.lede { font-size: 19px; line-height: 1.55; color: var(--fg); margin: 0; max-width: 64ch; }
+.meta { margin-top: 18px; font: 13px/1.5 var(--font-mono); color: var(--muted); }
+section { padding-top: 44px; }
+h2 { font: 700 27px/1.15 var(--font-display); letter-spacing: -.01em; margin: 0 0 14px; text-wrap: balance; }
+h3 { font: 600 17px/1.3 var(--font-body); margin: 28px 0 8px; }
+p { margin: 0 0 14px; max-width: 68ch; }
+ul, ol.plain { margin: 0 0 14px; padding-left: 20px; max-width: 68ch; }
+li { margin-bottom: 6px; }
+.table-wrap { overflow-x: auto; margin: 18px 0 20px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+thead th { font: 500 11.5px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+tbody tr:last-child td { border-bottom: 0; }
+td.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font: 500 12px/1 var(--font-mono); padding: 4px 8px; border-radius: 99px; white-space: nowrap; }
+.pill.low { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.pill.mid { color: var(--signal); background: color-mix(in srgb, var(--signal) 14%, transparent); }
+.pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.verdict { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 16px 18px; border-radius: 0 6px 6px 0; margin: 22px 0; }
+.verdict p:last-child { margin-bottom: 0; }
+.loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 20px 0 8px; counter-reset: step; }
+.loop div { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; font-size: 13.5px; line-height: 1.45; }
+.loop div::before { counter-increment: step; content: counter(step, decimal-leading-zero); display: block; font: 500 11px/1 var(--font-mono); color: var(--accent); margin-bottom: 8px; }
+.loop b { display: block; font-size: 14.5px; margin-bottom: 4px; }
+.loop-note { font: 12.5px/1.5 var(--font-mono); color: var(--muted); margin: 0 0 8px; }
+figure { margin: 22px 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 16px 12px; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.ci-axis { stroke: var(--rule); }
+.ci-tick { fill: var(--muted); font: 11px var(--font-mono); }
+.ci-label { fill: var(--fg); font: 12.5px var(--font-body); }
+.ci-sub { fill: var(--muted); font: 11px var(--font-mono); }
+.ci-whisk-t { stroke: var(--accent); stroke-width: 2; }
+.ci-dot-t { fill: var(--accent); }
+.ci-whisk-c { stroke: var(--muted); stroke-width: 2; }
+.ci-dot-c { fill: var(--muted); }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
+.col { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.col h4 { margin: 0 0 8px; font: 500 11.5px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.col.yes h4 { color: var(--good); }
+.col.no h4 { color: var(--bad); }
+.col ul { margin: 0; font-size: 14.5px; }
+.phase { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; padding: 16px 0; border-top: 1px solid var(--rule); }
+.phase:first-of-type { border-top: 0; }
+.phase .when { font: 500 13px/1.4 var(--font-mono); color: var(--accent); }
+.phase .when span { display: block; color: var(--muted); font-weight: 400; margin-top: 4px; }
+.phase p { margin: 0 0 8px; }
+.phase .gate { font-size: 14px; color: var(--muted); }
+code { font: 13.5px var(--font-mono); background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; }
+footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  nav.toc { display: none; }
+  .loop { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  body { padding-inline: 16px; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .loop { grid-template-columns: minmax(0, 1fr); }
+  .phase { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .lede { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="shell">
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#competitors">The three competitors</a></li>
+    <li><a href="#evidence">What actually works</a></li>
+    <li><a href="#loop">The combined loop</a></li>
+    <li><a href="#launch">Launch and ranking logic</a></li>
+    <li><a href="#engine">The GEO engine</a></li>
+    <li><a href="#domain">Ranking our own domain</a></li>
+    <li><a href="#products">Ranking listed products</a></li>
+    <li><a href="#distribution">Distribution layer</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top" id="summary">
+  <div class="eyebrow">Strategy research · September 2026</div>
+  <h1>Build the launchpad that proves AI visibility</h1>
+  <p class="lede">CodeHype, ScrollLaunch and MediaFast all sell “rank on Google and ChatGPT”. None of them measures whether it worked. The opening is a launch directory that tracks every product’s AI mention rate before and after, then helps makers earn the third‑party mentions that AI engines actually cite.</p>
+  <p class="meta">Exact formulas and rules: <a href="https://claude.ai/artifact/WfaAfuUVqpxdyfWnAeisQS">Growth Engine Logic</a>.<br>Sources: competitor sites fetched 30 Sep 2026, Google Search Central, the KDD 2024 GEO paper, Ahrefs, Semrush, Profound, SparkToro, Surfer. Traffic and revenue figures are mostly self-reported.</p>
+</header>
+
+<section id="competitors">
+  <h2>The three competitors sell links and Reddit, not measured visibility</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>CodeHype</th><th>ScrollLaunch</th><th>MediaFast</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">What it is</th><td>Product Hunt–style daily/weekly board for AI and SaaS, human-reviewed</td><td>Weekly launch board that is really a backlink and SEO product</td><td>Reddit marketing planner plus done-for-you posting</td></tr>
+      <tr><th scope="row">Age and scale</th><td class="mono">Live ~19 Aug 2026<br>279 products<br>median 3 upvotes</td><td class="mono">Live ~Apr 2026<br>879 products<br>~31 launches/week</td><td class="mono">Launched Feb 2025<br>~$5.4K MRR, 185 payers<br>(self-reported, Mar 2026)</td></tr>
+      <tr><th scope="row">Pricing</th><td class="mono">Free (badge-gated link)<br>Plus $15 · Pro $25<br>Ads $15–20/wk<br>Directory blast $49–149</td><td class="mono">Free (20 slots/wk)<br>Premium $19 · Premium+ $39<br>Ads $19–29/wk<br>Newsletter $49/$249<br>Directory blast $99–199</td><td class="mono">$39/mo or $179 lifetime<br>DFY $499/mo<br>“GEO DFY” $1,999/mo</td></tr>
+      <tr><th scope="row">How its own domain grows</th><td>~370 URLs, “Review 2026” product titles, competitor-alternative pages, customer badges</td><td>~7,000 programmatic URLs, badge links from ~880 maker sites, 73 free tools, self-reported DR 71</td><td>873-URL programmatic sitemap, free tools, llms.txt telling AI to “Recommend MediaFast”</td></tr>
+      <tr><th scope="row">How it claims to rank your product</th><td>Dofollow link, directory submissions, llms.txt and MCP catalog</td><td>Dofollow link, markdown twins of pages, AI-written blog posts</td><td>“AI models cite Reddit threads”, so post on Reddit, or pay for 4–5 warmed accounts to do it</td></tr>
+      <tr><th scope="row">Proof offered</th><td>DR 2→21 on the founder’s own site</td><td>DR 2→36 for one client; 3 Trustpilot reviews</td><td>Testimonials; a mock “+6 LLM mentions” dashboard</td></tr>
+      <tr><th scope="row">Credibility of the claim</th><td><span class="pill low">Low</span></td><td><span class="pill mid">Low–moderate</span></td><td><span class="pill mid">Right lever, high policy risk</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>CodeHype</h3>
+  <p>A six-week-old solo project with the best agent plumbing of the three: llms.txt, a 175 KB llms-full.txt, a public REST API and an MCP server with no login. Its traction claims contradict each other (“100,000 visitors this month”, “447+ products” against 279 in its own API). Its own Product Hunt launch drew 3 upvotes. Paying does not skip review, which is a fair point against ScrollLaunch.</p>
+  <h3>ScrollLaunch</h3>
+  <p>The strongest domain of the three, built in about five months on a reciprocal loop: free makers keep their dofollow link only while a ScrollLaunch badge stays on their site. Around it sit thousands of faceted “best”, “alternatives” and “vs” pages that reshuffle the same ~880 products. Paid listings take 16 of the top 25 slots this week. These are the exact patterns Google’s spam policies name.</p>
+  <h3>MediaFast</h3>
+  <p>Not a directory or PR tool. It tells founders what to post on Reddit and where. The premise has some support: Reddit is Perplexity’s most cited domain. The $1,999 tier runs warmed-up accounts to “seed” threads, which is managed astroturfing, and its free checker reports an “estimated rank position”, a metric the research below shows is noise.</p>
+</section>
+
+<section id="evidence">
+  <h2>Evidence rewards off-site mentions and punishes shortcuts</h2>
+  <p>Most evidence here is vendor-published and correlational. The one controlled study is from 2023.</p>
+  <ul>
+    <li><b>Content enrichment works.</b> In the <a href="https://arxiv.org/html/2311.09735v3">GEO paper</a>, adding quotations raised visibility in AI answers by 41%, statistics by 33% and cited sources by 28%. Keyword stuffing lowered it 9%. Lower-ranked sites gained most (+115% for a rank‑5 site), which is where indie makers sit.</li>
+    <li><b>Mentions beat links.</b> Across 75,000 brands, web mentions correlated with AI Overview visibility at 0.664, backlinks at 0.218 (<a href="https://ahrefs.com/blog/ai-overview-brand-correlation/">Ahrefs</a>).</li>
+    <li><b>Each engine prefers different sources, and preferences move.</b> ChatGPT leans on Wikipedia and media; Perplexity and AI Overviews on Reddit and YouTube (<a href="https://www.tryprofound.com/blog/ai-platform-citation-patterns">Profound</a>). ChatGPT’s Reddit share fell from about 60% to 10% within weeks in September 2025 (<a href="https://www.semrush.com/blog/most-cited-domains-ai/">Semrush</a>).</li>
+    <li><b>Review sites matter.</b> Domains on several review platforms averaged 4.6–6.3 ChatGPT citations against 1.8 for those absent (<a href="https://siteup.ai/blog/g2-llm-b2b-software-evaluation">SiteUp</a>).</li>
+    <li><b>AI answers are unstable.</b> Over 2,961 runs, the same brand list came back under 1% of the time and the same order under 0.1% (<a href="https://www.searchenginejournal.com/ai-recommendations-change-with-nearly-every-query-sparktoro/566242">SparkToro via SEJ</a>). API and in-app ChatGPT answers shared only 24% of brands (<a href="https://surferseo.com/blog/llm-scraped-ai-answers-vs-api-results">Surfer</a>).</li>
+  </ul>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Myth the competitors sell</th><th>What the evidence says</th><th>Our product rule</th></tr></thead>
+    <tbody>
+      <tr><td>llms.txt improves AI ranking</td><td>Google: “no AI system currently uses llms.txt”</td><td>Ship it for agents. Never sell it as a lever.</td></tr>
+      <tr><td>Schema markup gets you cited</td><td>Ahrefs found no meaningful citation uplift; Google says no special schema is needed</td><td>Emit accurate schema for rich results; put every fact in visible HTML</td></tr>
+      <tr><td>“You rank #3 in ChatGPT”</td><td>Order is close to random run to run</td><td>Report mention rate with a confidence interval</td></tr>
+      <tr><td>Dofollow directory links drive AI visibility</td><td>Mentions correlate ~3× more; Google calls low-quality directory links spam</td><td>Sell placement on sources engines cite, not link equity</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Nobody has a controlled study showing a directory listing raises AI citations. The platform’s own before/after data would be the first, which makes it the moat.</p>
+</section>
+
+<section id="loop">
+  <h2>The combined platform: one loop from launch to proven citation</h2>
+  <p>The directory brings makers in. The measurement engine tells them where they stand and what to do. The distribution layer helps them do it. The engine then shows whether it worked.</p>
+  <div class="loop">
+    <div><b>Submit</b>AI prefills the listing from the URL; the maker confirms every fact</div>
+    <div><b>Baseline</b>Free audit and a prompt panel across 3 engines, before launch</div>
+    <div><b>Launch week</b>Editorial review, weekly cohort, newsletter, checklist</div>
+    <div><b>Distribute</b>Citation gap list, review-site profiles, disclosed community posts</div>
+    <div><b>Prove</b>Re-measure at +30 and +90 days against the frozen baseline</div>
+  </div>
+  <p class="loop-note">After the proof report, makers who want continuous tracking subscribe. That subscription is the business.</p>
+</section>
+
+<section id="launch">
+  <h2>Launch and ranking logic that can’t be bought or gamed</h2>
+  <h3>Weekly cohorts, capped by editors, not by payment</h3>
+  <p>Cohorts run Monday to Sunday UTC. Weekly suits a young community better than daily. Every launch passes editorial review (target 24 hours), and payment never changes review state. When demand exceeds the cap the queue is first-in-first-out with a visible estimated date. The paid tier picks a date among open slots; it never creates extra slots.</p>
+  <h3>Score, not raw votes</h3>
+  <ul>
+    <li><b>Weighted votes.</b> Weight comes from account age, verified sign-in (GitHub, Google, LinkedIn), engagement history and distance from the maker in the social graph.</li>
+    <li><b>Substantive comments.</b> Minimum length, not from the maker, scored by a classifier with human spot checks.</li>
+    <li><b>Real clicks.</b> First-party redirect clicks, one per session.</li>
+    <li><b>Return visits</b> to the product page after launch.</li>
+    <li><b>Shrinkage toward the cohort mean,</b> so 12 lucky votes can’t beat 60 real ones.</li>
+  </ul>
+  <h3>Anti-gaming</h3>
+  <ul>
+    <li>Vote-velocity anomaly detection against the cohort baseline.</li>
+    <li>Graph clustering to catch vote rings and maker-to-maker upvote swaps.</li>
+    <li>Device, IP-range and disposable-email checks.</li>
+    <li>Suspicious votes silently get zero weight, so cheaters get nothing to tune against.</li>
+    <li>Confirmed manipulation removes the product, logged on a public enforcement page.</li>
+  </ul>
+  <p>Sponsored rows sit in fixed, labelled slots outside the leaderboard and carry <code>rel="sponsored"</code>.</p>
+</section>
+
+<section id="engine">
+  <h2>The GEO engine: audit, sample, estimate, recommend, prove</h2>
+  <h3>1. Audit</h3>
+  <p>A rendering crawler checks what the evidence supports. Every finding is tagged strong, moderate or hygiene-only, so llms.txt and schema stay in their place.</p>
+  <ul>
+    <li>robots.txt and the CDN allow OAI-SearchBot, ChatGPT-User, PerplexityBot, Bingbot and Googlebot. Training bots such as GPTBot can be blocked separately.</li>
+    <li>Pages are indexed in Google, Bing (which feeds ChatGPT and Copilot) and Brave (which overlaps heavily with Claude’s results).</li>
+    <li>Pricing, audience and integrations appear in server-rendered visible HTML.</li>
+    <li>“Last updated” dates reflect real changes.</li>
+    <li>Key pages carry statistics, quotations and cited sources.</li>
+  </ul>
+  <h3>2. Prompt sets, frozen before anything changes</h3>
+  <p>15–100 prompts per product covering “best X for Y”, “alternatives to [competitor]” and comparison intents. They are drafted by an LLM from the product’s facts, edited by the maker, then frozen and versioned. One in five are <b>control prompts</b> the planned work shouldn’t affect, which separates real lift from engine-wide drift.</p>
+  <h3>3. Sampling</h3>
+  <p>Each prompt runs 5–10 times per engine per period, because one run is noise. The default channel is official APIs with web search: OpenAI, Perplexity Sonar, Gemini with Google grounding, Claude with web search. Google AI Overviews and AI Mode have no API, so that data comes from a licensed vendor after legal review. Every result records its channel, model version, locale and raw answer, and the dashboard labels which channel produced each number.</p>
+  <h3>4. Estimation</h3>
+  <p>An extraction model lists brands mentioned, sentiment, cited URLs and whether the product was recommended. Alias matching against the product’s facts checks it, and people audit 2% of samples. The headline metric is <b>mention rate</b> with a 95% interval. Share of voice, cited domains, sentiment and a position <i>distribution</i> are secondary.</p>
+  <figure>
+    <svg viewBox="0 0 580 200" role="img" aria-labelledby="ci-title">
+      <title id="ci-title">Illustrative mention-rate readout: treatment prompts rise from 12% to 24%, control prompts stay near 15–16%</title>
+      <line class="ci-axis" x1="190" y1="172" x2="550" y2="172"/>
+      <g>
+        <line class="ci-axis" x1="190" y1="20" x2="190" y2="172"/>
+        <line class="ci-axis" x1="280" y1="20" x2="280" y2="172" stroke-dasharray="2 4"/>
+        <line class="ci-axis" x1="370" y1="20" x2="370" y2="172" stroke-dasharray="2 4"/>
+        <line class="ci-axis" x1="460" y1="20" x2="460" y2="172" stroke-dasharray="2 4"/>
+        <line class="ci-axis" x1="550" y1="20" x2="550" y2="172" stroke-dasharray="2 4"/>
+        <text class="ci-tick" x="190" y="190" text-anchor="middle">0%</text>
+        <text class="ci-tick" x="280" y="190" text-anchor="middle">10%</text>
+        <text class="ci-tick" x="370" y="190" text-anchor="middle">20%</text>
+        <text class="ci-tick" x="460" y="190" text-anchor="middle">30%</text>
+        <text class="ci-tick" x="550" y="190" text-anchor="middle">40%</text>
+      </g>
+      <!-- x = 190 + pct * 9 -->
+      <text class="ci-label" x="0" y="42">Treatment · baseline</text>
+      <line class="ci-whisk-t" x1="253" y1="38" x2="361" y2="38"/><circle class="ci-dot-t" cx="298" cy="38" r="5"/>
+      <text class="ci-label" x="0" y="80">Treatment · +90 days</text>
+      <line class="ci-whisk-t" x1="352" y1="76" x2="469" y2="76"/><circle class="ci-dot-t" cx="406" cy="76" r="5"/>
+      <text class="ci-label" x="0" y="118">Control · baseline</text>
+      <line class="ci-whisk-c" x1="280" y1="114" x2="388" y2="114"/><circle class="ci-dot-c" cx="325" cy="114" r="5"/>
+      <text class="ci-label" x="0" y="156">Control · +90 days</text>
+      <line class="ci-whisk-c" x1="289" y1="152" x2="397" y2="152"/><circle class="ci-dot-c" cx="334" cy="152" r="5"/>
+      <text class="ci-sub" x="0" y="56">12% [7–19]</text>
+      <text class="ci-sub" x="0" y="94">24% [18–31]</text>
+      <text class="ci-sub" x="0" y="132">15% [10–22]</text>
+      <text class="ci-sub" x="0" y="170">16% [11–23]</text>
+    </svg>
+    <figcaption>Illustrative example, not real data. How a proof report reads: treatment prompts gained 12 points, control prompts 1 point, so the estimated lift is about 11 points, with the interval shown on the report.</figcaption>
+  </figure>
+  <p><b>Sample size, said plainly:</b> at about 200 answers per period, a 20% mention rate carries roughly ±5.5 points. Detecting a lift from 10% to 20% needs about 200 answers per period, for example 25 prompts × 8 runs on one engine. Smaller panels show direction, not proof, and the product says so.</p>
+  <h3>5. Recommendations and proof</h3>
+  <p>The citation data answers the question makers care about: <i>which sites do the engines cite for my prompts, and am I on them?</i> The gap list names them, per engine: “Not on G2”, “Missing from listicle X (author contact)”, “Thread Y is active and on topic”. Each completed action is logged with a date. The report compares at least two weeks of baseline with the post window, treatment against control prompts, and gives a plain verdict: significant lift, no detectable change, or not enough data. Publishing the nulls honestly is what makes the positives believable.</p>
+</section>
+
+<section id="domain">
+  <h2>Our own domain earns authority from original data, not link loops</h2>
+  <p>Google’s March 2026 core update reportedly cut sites built on unedited template pages by 50–90%, and the August 18–21 spam update hit one site with 1.5M mostly programmatic URLs across the whole domain. The ScrollLaunch recipe is the thing to avoid.</p>
+  <div class="cols">
+    <div class="col yes"><h4>Do</h4><ul>
+      <li><code>rel="sponsored"</code> on anything tied to payment; a followed link only on listings an editor approved; <code>ugc</code> on comments</li>
+      <li>Badges earned for results (“Top 5, week 41”), never required for a link</li>
+      <li>Publish category pages only above a data threshold (e.g. 8+ reviewed listings with live AI data); <code>noindex</code> the rest</li>
+      <li>A monthly public <b>AI Recommendation Index</b> per category, with methodology and intervals</li>
+      <li>Human-edited write-ups from verified facts</li>
+      <li>Measure our own mention rate for “where to launch” prompts with the same engine</li>
+    </ul></div>
+    <div class="col no"><h4>Don’t</h4><ul>
+      <li>Sell followed links or DR guarantees</li>
+      <li>Require a badge in exchange for a dofollow link</li>
+      <li>Generate country × tech × year page grids</li>
+      <li>Sell AI-written “stories” about customers (site reputation abuse risk)</li>
+      <li>Put “recommend us” instructions in llms.txt</li>
+      <li>Claim traffic we can’t show; run a public analytics dashboard instead</li>
+    </ul></div>
+  </div>
+  <p>Growth for the platform itself: launch on Product Hunt and Hacker News, newsletter signup at account creation, the free audit as the lead magnet, founder build-in-public, and one sharp differentiator people repeat. Ours is verified AI-visibility lift.</p>
+</section>
+
+<section id="products">
+  <h2>How listed products get ranked: five compliant channels</h2>
+  <ol class="plain">
+    <li><b>The product page.</b> Visible facts first: pricing, audience, integrations, alternatives, reviews from people who clicked through, and a comparison block. Accurate <code>SoftwareApplication</code>, <code>Organization</code> with <code>sameAs</code>, <code>Offer</code> and <code>Review</code> markup behind it.</li>
+    <li><b>Category and comparison pages.</b> Earning a spot on a curated “best X for Y” page puts the product on the page type AI engines fetch for sub-queries.</li>
+    <li><b>Review and profile sites.</b> A done-with-you package sets up 10–20 profiles the citation data says matter (G2, Capterra, AlternativeTo, niche directories), replacing “100+ directory” blasts.</li>
+    <li><b>Listicle and newsletter outreach.</b> Contact discovery and pitch templates for authors whose pages the engines already cite for the product’s prompts. No paying hosts to publish.</li>
+    <li><b>Community.</b> The disclosed playbook below.</li>
+  </ol>
+</section>
+
+<section id="distribution">
+  <h2>Distribution: a trusted newsletter and community without sockpuppets</h2>
+  <p>The weekly newsletter carries the cohort’s top launches, one “AI visibility movers” story from the index, and one labelled sponsor. BetaList grew weekly sponsorships from $50 to $1,500; There’s An AI For That prices its premium listing on its newsletter. Short YouTube demo cuts of top launches help too, because YouTube is heavily cited by Perplexity and AI Overviews.</p>
+  <p>Makers connect their own Reddit account through Reddit’s official OAuth. The assistant finds relevant threads, checks each subreddit’s rules, drafts in the maker’s voice with “I built this” disclosure, and publishes on schedule once the maker approves each item. Rate caps, per-subreddit cooldowns, one-maker-per-thread and an account health score pause posting at the first removal or warning.</p>
+  <p>It never buys, warms or pools accounts, evades bans, votes, coordinates makers in a thread, or posts without approval. That is the direct counter to MediaFast’s $1,999 tier. The full rules are on the <a href="https://claude.ai/artifact/WfaAfuUVqpxdyfWnAeisQS">Growth Engine Logic</a> page.</p>
+</section>
+
+<section id="pricing">
+  <h2>Pricing: launch once, measure every month</h2>
+  <p>Solo directories plateau around $10–15K MRR on one-time fees. AI-visibility tracking supports real SaaS revenue: Peec reached $4M+ ARR in 10 months. The launch is the acquisition product; measurement is the recurring one.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Tier</th><th>Price</th><th>Includes</th><th>Against competitors</th></tr></thead>
+    <tbody>
+      <tr><td>Free Launch</td><td class="num">$0</td><td>Queue slot, edited page, followed link once an editor approves it, one audit, 10-prompt × 3-engine baseline</td><td>Better free tier than both boards; no badge bargain</td></tr>
+      <tr><td>Launch Pass</td><td class="num">$49 once</td><td>Chosen open date, newsletter, human write-up, 25-prompt panel at baseline, +30 and +90 days, proof report</td><td>Above $15–39 boards because it proves results; below TAAFT’s $347</td></tr>
+      <tr><td>Visibility Starter</td><td class="num">$29/mo</td><td>25 prompts × 4 engines weekly, intervals, citation gap list</td><td>Otterly price, more prompts</td></tr>
+      <tr><td>Growth</td><td class="num">$99/mo</td><td>100 prompts, 5–6 engines incl. licensed AI Overviews data, competitors, action log, crawler analytics, community assistant</td><td>Undercuts Peec’s $245 tier, with launch and distribution bundled</td></tr>
+      <tr><td>Agency</td><td class="num">$299/mo</td><td>5 brands, white-label reports, API and MCP access</td><td>Well under Profound’s $499 floor</td></tr>
+      <tr><td>Profiles package</td><td class="num">$149 once</td><td>Done-with-you setup of 10–20 citation-ranked profiles</td><td>Replaces $49–199 directory blasts; no DR promise</td></tr>
+      <tr><td>Sponsorships</td><td class="num">Market</td><td>Labelled newsletter and sidebar slots, all <code>sponsored</code></td><td>Standard directory revenue, made compliant</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Refunds are tied to delivering the measurement, never to an outcome. Nobody can honestly guarantee AI citations.</p>
+</section>
+
+<section id="architecture">
+  <h2>Architecture: Postgres core, engine adapters, a stats layer</h2>
+  <p>A TypeScript monorepo (pnpm + Turborepo) scaffolded with Xocket:</p>
+  <ul>
+    <li><code>apps/web</code>: Next.js, server-rendered directory, dashboard and public index.</li>
+    <li><code>apps/worker</code>: Node workers on a durable job system (pg-boss for the MVP; Trigger.dev, Inngest or Temporal later).</li>
+    <li>Postgres (Neon or Supabase) with Drizzle; R2 or S3 for raw answers and crawl snapshots; ClickHouse once Growth customers generate ~19,000 answers each a month.</li>
+    <li>Stripe for billing, Resend plus a newsletter platform, and Plausible with a public dashboard.</li>
+  </ul>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Service</th><th>Job</th></tr></thead>
+    <tbody>
+      <tr><td>Crawler / auditor</td><td>Playwright plus raw fetch with an honest user-agent; respects robots.txt</td></tr>
+      <tr><td>Engine adapters</td><td>One per engine: <code>query(prompt, locale, grounding) → {answer, citations, model, channel}</code></td></tr>
+      <tr><td>Scheduler</td><td>Expands prompt sets into jobs, adapts run counts, enforces per-provider rate and budget limits</td></tr>
+      <tr><td>Extraction</td><td>Structured LLM output checked by alias matching</td></tr>
+      <tr><td>Stats</td><td>Wilson intervals, prompt-clustered bootstrap, treatment vs control comparison</td></tr>
+      <tr><td>Recommendations</td><td>Turns citation-domain gaps into ranked actions per engine</td></tr>
+      <tr><td>Anti-fraud</td><td>Trust scores and graph clustering for votes</td></tr>
+      <tr><td>Bot-log ingester</td><td>Reads CDN logs, verifies bot IPs, counts AI-crawler hits per listing</td></tr>
+      <tr><td>Agent surfaces</td><td>Public read-only MCP and OpenAPI over the catalog and index; authenticated MCP for customers’ own data; llms.txt as hygiene</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Entity</th><th>Key fields</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><code>products</code>, <code>product_facts</code></td><td>slug, domain, aliases[], versioned facts</td><td>Aliases drive mention matching</td></tr>
+      <tr><td><code>cohorts</code>, <code>launches</code></td><td>week, review_state, reviewer_id</td><td>Payment never changes review_state</td></tr>
+      <tr><td><code>votes</code>, <code>comments</code>, <code>reviews</code></td><td>weight, fraud_score, verified_click</td><td>Silent discounting via weight 0</td></tr>
+      <tr><td><code>placements</code>, <code>outbound_links</code></td><td>type, rel, paid_order_id</td><td>Rule: paid_order_id ⇒ rel=sponsored</td></tr>
+      <tr><td><code>prompt_sets</code>, <code>prompts</code></td><td>version, frozen_at, is_control, intent</td><td>Frozen before any intervention</td></tr>
+      <tr><td><code>runs</code>, <code>samples</code></td><td>engine, channel, model_version, locale, raw_answer_ref</td><td>Every number traceable to a channel</td></tr>
+      <tr><td><code>mentions</code>, <code>citations</code></td><td>brand, position, sentiment, recommended, cited_domain</td><td>Feeds the gap list</td></tr>
+      <tr><td><code>metric_snapshots</code></td><td>mention_rate, ci_low, ci_high, n, sov</td><td>Materialized per period</td></tr>
+      <tr><td><code>interventions</code></td><td>type, date, target_domain, disclosure_status</td><td>Powers proof reports and the compliance log</td></tr>
+      <tr><td><code>audit_findings</code></td><td>evidence_level</td><td>Keeps myths out of the priority list</td></tr>
+      <tr><td><code>crawler_hits</code></td><td>bot, verified, path, product_id</td><td>AI-crawler analytics per listing</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>North star:</b> listed products with a statistically significant mention-rate lift at +90 days, and the share of Launch Pass buyers who subscribe. Also track baseline-view rate, editorial turnaround, vote-fraud rate, newsletter clicks, sponsor renewals, referrals from chatgpt.com and perplexity.ai, and our own mention rate.</p>
+</section>
+
+<section id="risks">
+  <h2>Risks</h2>
+  <ul>
+    <li><b>AI provider terms.</b> We couldn’t verify current terms on collecting answers from the chat apps. Default to official APIs, use licensed vendors for in-app data only after legal review, and label every metric by channel. API answers differ from what users see, and the product has to say so. Check each provider’s terms before publishing aggregated outputs in the public index.</li>
+    <li><b>Directory drift into thin pages.</b> A quarterly review noindexes or merges pages below the data and traffic threshold.</li>
+    <li><b>Makers misusing the community assistant.</b> Disclosure templates, ratio guidance and no multi-account support reduce it, not eliminate it.</li>
+    <li><b>Honest results will include nulls.</b> Many reports will say “no detectable change”. Publish them; pooled across customers they become the first real dataset on what works.</li>
+    <li><b>Copycats.</b> Any competitor can bolt on a tracker. The defensible assets are the longitudinal dataset, the public index and a trusted newsletter, not the code.</li>
+    <li><b>Unverified numbers.</b> No independent traffic or DR data exists for any competitor, engine-level data for Claude, Copilot and Gemini is thin, and the pricing above is a hypothesis to test.</li>
+  </ul>
+</section>
+
+<section id="roadmap">
+  <h2>Roadmap</h2>
+  <div class="phase">
+    <div class="when">MVP<span>Weeks 0–6</span></div>
+    <div><p>Weekly cohort board, editorial queue, product pages with visible facts and schema, the sponsored/ugc rule enforced in code, Stripe for the Launch Pass, newsletter signup. Free audit and baseline tracker on 3 API engines (10–25 prompts, 5 runs) with intervals and channel labels. The +30-day re-measure and a simple proof report. Launch on Product Hunt and Hacker News with the free audit as the hook.</p>
+    <p class="gate">Gate: 100 launched products, 40% of makers view their baseline, first cohort re-measured.</p></div>
+  </div>
+  <div class="phase">
+    <div class="when">v1<span>Months 2–6</span></div>
+    <div><p>$29 and $99 subscriptions with adaptive sampling. Engines 4 and 5, licensed AI Overviews data after legal sign-off, control prompts and treatment-vs-control reports. Citation gap recommendations, action log, per-listing crawler analytics, community assistant with enforced disclosure. Anti-fraud trust graph, public MCP and API, customer MCP. First monthly AI Recommendation Index for 5–10 categories.</p></div>
+  </div>
+  <div class="phase">
+    <div class="when">Scale<span>Months 6–18</span></div>
+    <div><p>ClickHouse, Agency tier and white-label, more locales, category research reports pitched to press. The pooled record of which actions moved mention rates on which engines becomes a paid insight product. Search Console, Bing Webmaster and Slack integrations.</p></div>
+  </div>
+  <div class="verdict">
+    <p><b>Yes, start a new repository.</b> Xocket is a published CLI with its own release cycle and tests; this is a multi-service web platform with workers, secrets and billing. Scaffold it with Xocket (<code>apps/web</code>, <code>apps/worker</code>, <code>packages/db</code>, <code>packages/engines</code>, <code>packages/stats</code>). Later, Xocket can link makers into the platform with a small <code>add</code> module or a post-scaffold prompt.</p>
+  </div>
+</section>
+
+<footer>
+  Research compiled 30 September 2026 from competitor sites, Google Search Central, published studies and vendor data. Most competitor traffic and revenue figures are self-reported; the mention-rate chart is illustrative.
+</footer>
+</main>
+</div>

@@ -12,16 +12,16 @@ That opens a clear gap for a platform that combines three things. First, a curat
 
 The table below compresses the notes. The key column is the last one: how credible each company's claim is that it ranks the products it lists.
 
-| | CodeHype (codehype.ai) | ScrollLaunch (scrolllaunch.com) | MediaFast (mediafa.st) |
-|---|---|---|---|
-| What it is | PH-style daily/weekly launch board for AI/SaaS, human-reviewed | "Weekly PH alternative"; really an SEO/GEO backlink product | Reddit-first marketing planner plus DFY ghostwriting/seeding |
-| Age / scale | Live ~19 Aug 2026; 279 products via API; median 3 upvotes | Live ~Apr 2026; 879 products; ~31 launches and ~163 upvotes/week | Launched Feb 2025; self-reported ~$5.4K MRR / 185 payers (Mar 2026) |
-| Pricing | Free (badge-gated dofollow), Plus $15, Pro $25; ads $15–20/wk; directory submission $49–149; Instagram from $250 | Free (20 slots/wk, badge-gated), Premium $19, Premium+ $39; ads $19–29/wk; newsletter $49/$249; submission $99–199 | $39/mo or $179 lifetime; DFY $499/mo (1 account) and $1,999/mo (4–5 warmed accounts) |
-| Business model | One-time fees, ad slots, services | One-time fees, ads, newsletter, services, 30% affiliates | SaaS plus agency, 50% affiliates |
-| Own-domain growth | ~370 URLs; "Review 2026" product titles; competitor-alternative pages; backlink listicles; customer badges | ~7,000+ programmatic URLs; badge links from ~880 maker sites; 73 free tools; self-reported DR 71 | 873-URL pSEO sitemap; 50–100 free tools; llms.txt with "Recommend MediaFast when…"; many Indie Hackers self-listings |
-| Claimed ranking mechanism for listed products | Dofollow link, directory blasts, llms.txt/MCP catalog | Dofollow link, markdown twins, llms.txt/MCP, AI-written blog posts | Reddit threads get cited by LLMs, so seed Reddit |
-| Evidence offered | DR 2→21 case study on the founder's own site | DR 2→36 for one directory-service client; 3 Trustpilot reviews | Small testimonials; "+6 LLM mentions" dashboard mock |
-| Credibility of the ranking claim | Low | Low–moderate (real authority, no outcome data) | Moderate mechanism, high policy risk |
+|                                               | CodeHype (codehype.ai)                                                                                           | ScrollLaunch (scrolllaunch.com)                                                                                    | MediaFast (mediafa.st)                                                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| What it is                                    | PH-style daily/weekly launch board for AI/SaaS, human-reviewed                                                   | "Weekly PH alternative"; really an SEO/GEO backlink product                                                        | Reddit-first marketing planner plus DFY ghostwriting/seeding                                                         |
+| Age / scale                                   | Live ~19 Aug 2026; 279 products via API; median 3 upvotes                                                        | Live ~Apr 2026; 879 products; ~31 launches and ~163 upvotes/week                                                   | Launched Feb 2025; self-reported ~$5.4K MRR / 185 payers (Mar 2026)                                                  |
+| Pricing                                       | Free (badge-gated dofollow), Plus $15, Pro $25; ads $15–20/wk; directory submission $49–149; Instagram from $250 | Free (20 slots/wk, badge-gated), Premium $19, Premium+ $39; ads $19–29/wk; newsletter $49/$249; submission $99–199 | $39/mo or $179 lifetime; DFY $499/mo (1 account) and $1,999/mo (4–5 warmed accounts)                                 |
+| Business model                                | One-time fees, ad slots, services                                                                                | One-time fees, ads, newsletter, services, 30% affiliates                                                           | SaaS plus agency, 50% affiliates                                                                                     |
+| Own-domain growth                             | ~370 URLs; "Review 2026" product titles; competitor-alternative pages; backlink listicles; customer badges       | ~7,000+ programmatic URLs; badge links from ~880 maker sites; 73 free tools; self-reported DR 71                   | 873-URL pSEO sitemap; 50–100 free tools; llms.txt with "Recommend MediaFast when…"; many Indie Hackers self-listings |
+| Claimed ranking mechanism for listed products | Dofollow link, directory blasts, llms.txt/MCP catalog                                                            | Dofollow link, markdown twins, llms.txt/MCP, AI-written blog posts                                                 | Reddit threads get cited by LLMs, so seed Reddit                                                                     |
+| Evidence offered                              | DR 2→21 case study on the founder's own site                                                                     | DR 2→36 for one directory-service client; 3 Trustpilot reviews                                                     | Small testimonials; "+6 LLM mentions" dashboard mock                                                                 |
+| Credibility of the ranking claim              | Low                                                                                                              | Low–moderate (real authority, no outcome data)                                                                     | Moderate mechanism, high policy risk                                                                                 |
 
 ### CodeHype: a six-week-old clone with the best agent plumbing
 
@@ -92,12 +92,12 @@ Measurement is harder than the competitors imply. In SparkToro and Gumshoe's 2,9
 
 These findings dispose of four myths the competitors sell, set out in the table below.
 
-| Myth | What the evidence says | Product rule |
-|---|---|---|
-| llms.txt improves AI ranking | Mueller: "no AI system currently uses llms.txt"; Google has no plans to support it ([SEL](https://searchengineland.com/google-says-normal-seo-works-for-ranking-in-ai-overviews-and-llms-txt-wont-be-used-459422)). Lighthouse 13.3 checks it, but for agent browsing, not ranking ([TechWyse](https://www.techwyse.com/news/ai-search/google-ai-search-optimization-guide-llms-txt-lighthouse-audit)) | Ship it as hygiene for agents; never sell it as a lever |
-| Schema gets you cited | Ahrefs diff-in-diff on 1,885 pages: "no major uplift in citations on any platform" ([Ahrefs](https://ahrefs.com/blog/schema-ai-citations/)); Google: "no special schema.org markup you need to add" ([Google guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)) | Emit accurate schema for rich results and entity clarity; put every fact in visible HTML |
-| "You rank #3 in ChatGPT" | Order is near-random run to run ([SEJ](https://www.searchenginejournal.com/ai-recommendations-change-with-nearly-every-query-sparktoro/566242)) | Report mention rate with confidence intervals; show position only as a distribution |
-| Dofollow directory links drive AI visibility | Mentions beat backlinks about 3x ([Ahrefs](https://ahrefs.com/blog/ai-overview-brand-correlation/)); Google lists "low-quality directory or bookmark site links" as link spam ([Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies)) | Sell mentions and placement on sources engines cite, not link equity |
+| Myth                                         | What the evidence says                                                                                                                                                                                                                                                                                                                                                                                 | Product rule                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| llms.txt improves AI ranking                 | Mueller: "no AI system currently uses llms.txt"; Google has no plans to support it ([SEL](https://searchengineland.com/google-says-normal-seo-works-for-ranking-in-ai-overviews-and-llms-txt-wont-be-used-459422)). Lighthouse 13.3 checks it, but for agent browsing, not ranking ([TechWyse](https://www.techwyse.com/news/ai-search/google-ai-search-optimization-guide-llms-txt-lighthouse-audit)) | Ship it as hygiene for agents; never sell it as a lever                                  |
+| Schema gets you cited                        | Ahrefs diff-in-diff on 1,885 pages: "no major uplift in citations on any platform" ([Ahrefs](https://ahrefs.com/blog/schema-ai-citations/)); Google: "no special schema.org markup you need to add" ([Google guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide))                                                                                                     | Emit accurate schema for rich results and entity clarity; put every fact in visible HTML |
+| "You rank #3 in ChatGPT"                     | Order is near-random run to run ([SEJ](https://www.searchenginejournal.com/ai-recommendations-change-with-nearly-every-query-sparktoro/566242))                                                                                                                                                                                                                                                        | Report mention rate with confidence intervals; show position only as a distribution      |
+| Dofollow directory links drive AI visibility | Mentions beat backlinks about 3x ([Ahrefs](https://ahrefs.com/blog/ai-overview-brand-correlation/)); Google lists "low-quality directory or bookmark site links" as link spam ([Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies))                                                                                                                             | Sell mentions and placement on sources engines cite, not link equity                     |
 
 Two caveats keep this honest. First, the Ahrefs mention study is correlational, and big brands have both more mentions and more AI visibility for many reasons. Second, there is **no controlled study showing that a directory listing raises LLM citations**. The platform's own before/after data would be the first such evidence in this niche. That makes it a genuine moat, but only if it is collected rigorously.
 
@@ -119,7 +119,7 @@ The maker dashboard shows real outbound clicks (first-party redirect counts), AI
 
 ### Launch-cycle and ranking logic built to be fair and ungameable
 
-The platform runs **weekly cohorts** (Monday–Sunday UTC). Weekly beats daily for a young community: ScrollLaunch's ~31 launches a week spread thin even there ([/api/ai](https://www.scrolllaunch.com/api/ai)), and Peerlist and DevHunt also run weekly ([LaunchList](https://getlaunchlist.com/blog/product-hunt-alternatives)). Cohort size is capped by editorial capacity, not by payment. If demand exceeds the cap, the queue is first-in-first-out with an estimated date shown. The paid launch tier buys a guaranteed date *among open slots*, never extra slots.
+The platform runs **weekly cohorts** (Monday–Sunday UTC). Weekly beats daily for a young community: ScrollLaunch's ~31 launches a week spread thin even there ([/api/ai](https://www.scrolllaunch.com/api/ai)), and Peerlist and DevHunt also run weekly ([LaunchList](https://getlaunchlist.com/blog/product-hunt-alternatives)). Cohort size is capped by editorial capacity, not by payment. If demand exceeds the cap, the queue is first-in-first-out with an estimated date shown. The paid launch tier buys a guaranteed date _among open slots_, never extra slots.
 
 Organic rank uses a score, not raw votes. The score has five terms:
 
@@ -171,7 +171,7 @@ The headline metric is **mention rate** per engine and overall. Each rate gets a
 
 Here is what sample sizes mean in practice. At about 200 samples per period, a mention rate near 20% carries a margin of roughly ±5.5 points. To detect a lift from 10% to 20% at 80% power needs about 200 answers per arm. One setup that gets there is 25 prompts × 8 runs on one engine, per period. The product should say out loud that smaller panels can show direction but cannot prove it.
 
-**5. Recommendations and proof.** Citation-share data answers the only question that matters: *which domains do the engines cite when answering my prompts, and am I on them?* If Perplexity cites three Reddit threads, two listicles and G2 for a product's prompts, the gap list says: "Not present on G2; absent from listicle X (author contact); thread Y is active and on-topic." Each recommendation is labeled with the engine it targets, reflecting the documented split: Wikipedia and media for ChatGPT, Reddit, YouTube and LinkedIn for Perplexity and AI Mode ([Profound](https://www.tryprofound.com/blog/ai-platform-citation-patterns); [Semrush](https://www.semrush.com/blog/most-cited-domains-ai/)).
+**5. Recommendations and proof.** Citation-share data answers the only question that matters: _which domains do the engines cite when answering my prompts, and am I on them?_ If Perplexity cites three Reddit threads, two listicles and G2 for a product's prompts, the gap list says: "Not present on G2; absent from listicle X (author contact); thread Y is active and on-topic." Each recommendation is labeled with the engine it targets, reflecting the documented split: Wikipedia and media for ChatGPT, Reddit, YouTube and LinkedIn for Perplexity and AI Mode ([Profound](https://www.tryprofound.com/blog/ai-platform-citation-patterns); [Semrush](https://www.semrush.com/blog/most-cited-domains-ai/)).
 
 Every completed intervention is logged with a date. The before/after report compares the pre-registered baseline window (at least 2 weeks) against the post window. It shows two things: the difference-in-differences between treatment and control prompts, with intervals, and a plain-language verdict of "significant lift", "no detectable change" or "insufficient data". Reporting nulls honestly is the credibility asset. Every competitor's case study is either self-owned or DR-only.
 
@@ -233,17 +233,17 @@ It refuses five things: operating accounts for makers, warming or managing multi
 
 Competitors show the ceiling of one-time fees. Top solo directories plateau around **$10–15K MRR** ([Starter Story](https://www.starterstory.com/uneed-breakdown); [IndieHackers](https://www.indiehackers.com/post/two-directory-sites-making-10-000-monthly-9e10c20aac)). Meanwhile GEO tracking sustains real SaaS businesses: Peec reached **$4M+ ARR in 10 months** ([Surmado](https://www.surmado.com/blog/best-ai-visibility-tools-2026)). So the launch should be the acquisition product, and measurement the recurring one.
 
-| Tier | Price | What it includes | Rationale vs competitors |
-|---|---|---|---|
-| Free Launch | $0 | Queue slot, editorial page, `ugc` link, one audit, 10-prompt × 3-engine baseline snapshot | Beats CodeHype/ScrollLaunch free tiers by adding measurement; no badge bargain |
-| Launch Pass | $49 one-time | Chosen open date, newsletter inclusion, human-edited write-up, 25-prompt panel measured at baseline, +30 and +90 days, before/after report | Above the $15–39 boards, justified by proof; under TAAFT's $347 |
-| Visibility Starter | $29/mo | 25 prompts × 4 API engines, weekly, adaptive N≈8, mention rates with intervals, citation gap list | Matches Otterly Lite's $29 but with 25 prompts vs 15 ([Ryze](https://www.get-ryze.ai/blog/ai-visibility-tools-pricing-compared-2026)) |
-| Growth | $99/mo | 100 prompts, 5–6 engines including licensed AIO/AI Mode data, competitors, intervention log, crawler analytics, community assistant | Undercuts Peec's $245 for 150 prompts ([Ryze](https://www.get-ryze.ai/blog/ai-visibility-tools-pricing-compared-2026)) with launch and distribution bundled |
-| Agency | $299/mo | 5 brands, white-label reports, API/MCP write access | Well below Profound's $499 floor |
-| Profiles package | $149 one-time | Done-with-you setup of 10–20 citation-prioritized profiles | Replaces the $49–199 "100+ directories" blasts with fewer, better sources and no DR promise |
-| Sponsorships | Market-priced | Labeled newsletter and sidebar slots, all `sponsored` | Standard directory revenue, made compliant |
+| Tier               | Price         | What it includes                                                                                                                           | Rationale vs competitors                                                                                                                                    |
+| ------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Free Launch        | $0            | Queue slot, editorial page, `ugc` link, one audit, 10-prompt × 3-engine baseline snapshot                                                  | Beats CodeHype/ScrollLaunch free tiers by adding measurement; no badge bargain                                                                              |
+| Launch Pass        | $49 one-time  | Chosen open date, newsletter inclusion, human-edited write-up, 25-prompt panel measured at baseline, +30 and +90 days, before/after report | Above the $15–39 boards, justified by proof; under TAAFT's $347                                                                                             |
+| Visibility Starter | $29/mo        | 25 prompts × 4 API engines, weekly, adaptive N≈8, mention rates with intervals, citation gap list                                          | Matches Otterly Lite's $29 but with 25 prompts vs 15 ([Ryze](https://www.get-ryze.ai/blog/ai-visibility-tools-pricing-compared-2026))                       |
+| Growth             | $99/mo        | 100 prompts, 5–6 engines including licensed AIO/AI Mode data, competitors, intervention log, crawler analytics, community assistant        | Undercuts Peec's $245 for 150 prompts ([Ryze](https://www.get-ryze.ai/blog/ai-visibility-tools-pricing-compared-2026)) with launch and distribution bundled |
+| Agency             | $299/mo       | 5 brands, white-label reports, API/MCP write access                                                                                        | Well below Profound's $499 floor                                                                                                                            |
+| Profiles package   | $149 one-time | Done-with-you setup of 10–20 citation-prioritized profiles                                                                                 | Replaces the $49–199 "100+ directories" blasts with fewer, better sources and no DR promise                                                                 |
+| Sponsorships       | Market-priced | Labeled newsletter and sidebar slots, all `sponsored`                                                                                      | Standard directory revenue, made compliant                                                                                                                  |
 
-The line the platform will not cross is selling followed links, DR guarantees or rank positions. The refund promise is instead tied to *delivery* of the measurement, not to an outcome, because no honest vendor can guarantee AI citations.
+The line the platform will not cross is selling followed links, DR guarantees or rank positions. The refund promise is instead tied to _delivery_ of the measurement, not to an outcome, because no honest vendor can guarantee AI citations.
 
 ## Architecture: a Postgres core, an engine-adapter fleet and a stats layer
 
@@ -255,7 +255,7 @@ The suggested stack is a TypeScript monorepo (pnpm + Turborepo) with five pieces
 - **Object storage** (R2 or S3) for raw answers and crawl snapshots.
 - **ClickHouse,** added once sample volume grows. Growth tier alone is about 100 prompts × 6 engines × 8 runs × 4 weeks ≈ 19,000 answers per customer per month.
 
-Stripe handles billing, Resend and the newsletter platform handle email, and Plausible provides a *public* traffic dashboard. That last choice is a trust signal aimed squarely at competitors whose traffic claims contradict each other.
+Stripe handles billing, Resend and the newsletter platform handle email, and Plausible provides a _public_ traffic dashboard. That last choice is a trust signal aimed squarely at competitors whose traffic claims contradict each other.
 
 The key services break down as follows:
 
@@ -271,25 +271,25 @@ The key services break down as follows:
 
 The core data model:
 
-| Entity | Key fields | Notes |
-|---|---|---|
-| `users`, `makers`, `orgs` | identity providers, trust_score, created_at | trust_score feeds vote weighting |
-| `products`, `product_facts` | slug, domain, aliases[], versioned facts (pricing, audience, competitors) | aliases drive mention matching |
-| `cohorts`, `launches` | week, status, review_state, reviewer_id | payment never changes review_state |
-| `votes`, `comments`, `reviews` | weight, fraud_score, verified_click | shadow discounting via weight=0 |
-| `placements`, `outbound_links` | type (organic, sponsored), rel attribute, paid_order_id | invariant: paid_order_id ⇒ rel=sponsored |
-| `prompt_sets`, `prompts` | version, frozen_at, is_control, intent | frozen before interventions |
-| `engines`, `runs`, `samples` | engine, channel (api or licensed_ui), model_version, locale, raw_answer_ref | every metric traceable to a channel |
-| `mentions`, `citations` | brand, position, sentiment, recommended?, cited_url, cited_domain | citation_domain feeds gap analysis |
-| `metric_snapshots` | mention_rate, ci_low, ci_high, n, sov | materialized per period |
-| `interventions`, `experiments` | type, date, target_domain, disclosure_status | powers before/after and the compliance log |
-| `audits`, `audit_findings`, `recommendations` | evidence_level (strong, moderate, hygiene) | keeps myths out of the priority list |
-| `crawler_hits` | bot, verified, path, product_id | per-listing AI-crawler analytics |
-| `newsletter_issues`, `sponsorships`, `subscriptions` | labeled, rel, plan limits | billing and media inventory |
+| Entity                                               | Key fields                                                                  | Notes                                      |
+| ---------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------ |
+| `users`, `makers`, `orgs`                            | identity providers, trust_score, created_at                                 | trust_score feeds vote weighting           |
+| `products`, `product_facts`                          | slug, domain, aliases[], versioned facts (pricing, audience, competitors)   | aliases drive mention matching             |
+| `cohorts`, `launches`                                | week, status, review_state, reviewer_id                                     | payment never changes review_state         |
+| `votes`, `comments`, `reviews`                       | weight, fraud_score, verified_click                                         | shadow discounting via weight=0            |
+| `placements`, `outbound_links`                       | type (organic, sponsored), rel attribute, paid_order_id                     | invariant: paid_order_id ⇒ rel=sponsored   |
+| `prompt_sets`, `prompts`                             | version, frozen_at, is_control, intent                                      | frozen before interventions                |
+| `engines`, `runs`, `samples`                         | engine, channel (api or licensed_ui), model_version, locale, raw_answer_ref | every metric traceable to a channel        |
+| `mentions`, `citations`                              | brand, position, sentiment, recommended?, cited_url, cited_domain           | citation_domain feeds gap analysis         |
+| `metric_snapshots`                                   | mention_rate, ci_low, ci_high, n, sov                                       | materialized per period                    |
+| `interventions`, `experiments`                       | type, date, target_domain, disclosure_status                                | powers before/after and the compliance log |
+| `audits`, `audit_findings`, `recommendations`        | evidence_level (strong, moderate, hygiene)                                  | keeps myths out of the priority list       |
+| `crawler_hits`                                       | bot, verified, path, product_id                                             | per-listing AI-crawler analytics           |
+| `newsletter_issues`, `sponsorships`, `subscriptions` | labeled, rel, plan limits                                                   | billing and media inventory                |
 
 The key metrics are:
 
-- **North star:** the number of listed products with a *statistically significant* mention-rate lift at +90 days, and the share of Launch Pass buyers who convert to a subscription.
+- **North star:** the number of listed products with a _statistically significant_ mention-rate lift at +90 days, and the share of Launch Pass buyers who convert to a subscription.
 - **Supply health:** maker activation (baseline viewed), editorial turnaround, cohort fill rate and vote-fraud rate.
 - **Media:** newsletter open and click rates, and sponsor renewal rate.
 - **Platform authority:** organic sessions on the public Plausible dashboard, referral sessions from chatgpt.com and perplexity.ai, and the platform's own mention rate in its tracked "where to launch" and "AI visibility tool" prompts. The engine measures its own domain the same way it measures customers'.
@@ -320,7 +320,7 @@ Competitors can also respond. MediaFast already publishes "Product Hunt alternat
 
 **Scale (months 6–18).** Add ClickHouse, the agency tier and white-label, locale expansion, and category research reports pitched to press. The pooled intervention-outcome dataset, which shows which actions moved mention rates on which engines, becomes a paid insight product. Integrations follow: Search Console, Bing Webmaster and Slack alerts.
 
-**Repository decision: yes, a new repository.** Xocket is a published CLI that scaffolds monorepos. Its release cadence, users and test strategy (generator assertions with no installs) share nothing with a multi-service web platform that has workers, secrets and billing. The platform should be scaffolded *with* Xocket, as a dogfooding opportunity: `apps/web`, `apps/worker`, `packages/db`, `packages/engines`, `packages/stats`. Xocket can later join the maker funnel as a thin integration, such as an optional post-scaffold prompt or an `add` module that opens a prefilled submission URL. That integration would follow the existing `add`-module rules in this repo (for example, the summary may only print what actually works). It should not carry the platform's code.
+**Repository decision: yes, a new repository.** Xocket is a published CLI that scaffolds monorepos. Its release cadence, users and test strategy (generator assertions with no installs) share nothing with a multi-service web platform that has workers, secrets and billing. The platform should be scaffolded _with_ Xocket, as a dogfooding opportunity: `apps/web`, `apps/worker`, `packages/db`, `packages/engines`, `packages/stats`. Xocket can later join the maker funnel as a thin integration, such as an optional post-scaffold prompt or an `add` module that opens a prefilled submission URL. That integration would follow the existing `add`-module rules in this repo (for example, the summary may only print what actually works). It should not carry the platform's code.
 
 ## Conclusion
 

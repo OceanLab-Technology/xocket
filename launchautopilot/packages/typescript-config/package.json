@@ -1,0 +1,12 @@
+{
+  "name": "@xocket/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "base.json",
+    "web.json",
+    "next.json",
+    "node.json",
+    "native.json"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@xocket/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./base.js",
+    "./base": "./base.js",
+    "./base.js": "./base.js",
+    "./react": "./react.js",
+    "./react.js": "./react.js",
+    "./next": "./next.js",
+    "./next.js": "./next.js",
+    "./native": "./native.js",
+    "./native.js": "./native.js"
+  },
+  "files": [
+    "base.js",
+    "react.js",
+    "next.js",
+    "native.js"
+  ],
+  "dependencies": {
+    "@eslint/js": "^9.39.5",
+    "typescript-eslint": "^8.70.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0"
+  }
+}

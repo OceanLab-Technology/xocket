@@ -6,3 +6,6 @@ pnpm-lock.yaml
 # Templates are copied verbatim into generated projects; those projects format
 # themselves with their own Prettier config, which differs from this one.
 templates
+
+# Separate project parked here until it has its own repository.
+launchautopilot

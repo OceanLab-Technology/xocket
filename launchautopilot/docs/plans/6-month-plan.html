@@ -1,0 +1,166 @@
+<title>LaunchAutopilot 6-Month Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column. Daily rhythm first, then 6 month blocks, each with 4–6 week rows (build / grow / money) and a checkbox per task */
+:root {
+  --bg: #f4f6f7; --surface: #ffffff; --fg: #15212b; --muted: #56666f; --rule: #d6dee3;
+  --accent: #0d6a86; --accent-soft: #e2eff3; --grow: #a8661a; --money: #2f7a4a; --done: #2f7a4a;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e1519; --surface: #151f25; --fg: #e3eaee; --muted: #93a3ac; --rule: #2a3840; --accent: #5cb8d3; --accent-soft: #16303a; --grow: #e0a45a; --money: #6cc38c; --done: #6cc38c; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0e1519; --surface: #151f25; --fg: #e3eaee; --muted: #93a3ac; --rule: #2a3840; --accent: #5cb8d3; --accent-soft: #16303a; --grow: #e0a45a; --money: #6cc38c; --done: #6cc38c; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--font-body); padding-inline: 20px; padding-block: 0 56px; }
+.wrap { max-width: 780px; margin: 0 auto; padding-block: 36px 0; }
+.brand { font: 500 12px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(30px, 5vw, 42px)/1.1 var(--font-display); margin: 10px 0 10px; letter-spacing: -.01em; }
+.idea { font-size: 18px; margin: 0 0 8px; max-width: 60ch; }
+.top-progress { font: 500 13px/1 var(--font-mono); color: var(--muted); margin: 14px 0 0; }
+.bar { height: 6px; background: var(--rule); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.bar div { height: 100%; width: 0; background: var(--done); transition: width .3s; }
+h2 { font: 700 22px/1.2 var(--font-display); margin: 34px 0 10px; }
+.days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.day { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; min-width: 0; font-size: 14.5px; }
+.day b { display: block; font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.day.every { grid-column: 1 / -1; background: var(--accent-soft); border-color: transparent; }
+.day ul { margin: 0; padding-left: 18px; } .day li { margin-bottom: 2px; }
+.month { margin-top: 30px; }
+.mhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border-bottom: 2px solid var(--fg); padding-bottom: 8px; }
+.mhead h3 { font: 700 20px/1.2 var(--font-display); margin: 0; }
+.mhead .goal { font: 500 13px/1.3 var(--font-mono); color: var(--money); }
+.mhead .count { font: 500 12px/1 var(--font-mono); color: var(--muted); margin-left: auto; }
+.week { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.week .n { font: 500 12px/1.3 var(--font-mono); color: var(--muted); padding-top: 3px; }
+.week .n strong { display: block; font: 700 20px/1 var(--font-display); color: var(--fg); }
+.tasks { display: grid; gap: 6px; min-width: 0; }
+label { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; cursor: pointer; }
+input[type="checkbox"] { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--done); }
+input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.t { font-size: 15px; }
+.t i { font-style: normal; font: 500 10.5px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; margin-right: 6px; }
+.build i { color: var(--accent); } .grow i { color: var(--grow); } .money i { color: var(--money); }
+input:checked + .t { color: var(--muted); text-decoration: line-through; }
+footer { margin-top: 36px; font-size: 13px; color: var(--muted); }
+@media (max-width: 560px) { body { padding-inline: 16px; } .days { grid-template-columns: minmax(0, 1fr); } .week { grid-template-columns: minmax(0, 1fr); gap: 4px; } .week .n strong { display: inline; margin-right: 6px; } .mhead .count { margin-left: 0; } }
+</style>
+
+<div class="wrap">
+  <div class="brand">launchautopilot.ai</div>
+  <h1>6-Month Plan</h1>
+  <p class="idea">Launch once. Your marketing runs on autopilot. Every week has one thing to build, one way to grow us, and (from month 2) one way to make money.</p>
+  <p class="top-progress" id="total"></p>
+  <div class="bar"><div id="bar"></div></div>
+
+  <h2>Every day and every week</h2>
+  <div class="days">
+    <div class="day every"><b>Every day</b><ul>
+      <li>Approve new launches within 24 hours</li>
+      <li>1 build-in-public post on X or LinkedIn</li>
+      <li>3 helpful Reddit comments from the founder account (“I built LaunchAutopilot” when relevant)</li>
+      <li>Message 10 makers who launched somewhere else this week</li>
+      <li>Reply to every maker and customer message</li>
+    </ul></div>
+    <div class="day"><b>Monday</b>Newsletter goes out. New launch week opens.</div>
+    <div class="day"><b>Tue – Thu</b>Build days. Mornings on the week’s build task.</div>
+    <div class="day"><b>Friday</b>Check numbers and our own AI score. Talk to 5 makers.</div>
+    <div class="day"><b>Saturday</b>Write next week’s data post or case study.</div>
+    <div class="day"><b>Sunday</b>Launch week closes. Announce winners, send badges.</div>
+  </div>
+
+  <div id="months"></div>
+
+  <footer>Goals are targets, not predictions. Ticks are saved in this browser only.</footer>
+</div>
+
+<script>
+(function () {
+  var months = [
+    { name: 'Month 1 · Foundation', goal: 'Goal: 30 launches, 300 on the waitlist', weeks: [
+      { b: 'Landing page + waitlist + free “Does ChatGPT know you?” checker', g: 'Buy launchautopilot.ai. Open X, LinkedIn, Reddit. First build-in-public post' },
+      { b: 'Submit a product → product page', g: 'Message 50 makers to launch free in week one' },
+      { b: 'Weekly launch board, votes, comments', g: 'List ourselves on the first 10 directories' },
+      { b: 'First launch week live. Newsletter #1', g: 'Share the results on X, Reddit, Indie Hackers' }
+    ]},
+    { name: 'Month 2 · First money', goal: 'Goal: 80 launches, first $500', weeks: [
+      { b: 'Stripe payments', g: 'Post “Which launch sites does ChatGPT recommend?” with our data', m: 'Launch Pass $49' },
+      { b: 'Earned badges + basic anti-cheat', g: '10 more directories + G2 and Capterra profiles' },
+      { b: 'Homepage featured spots', g: 'Indie Hackers post + message 50 more makers', m: 'Featured spot $29–99/week' },
+      { b: 'Maker dashboard with AI score', g: 'Launch LaunchAutopilot on Product Hunt' }
+    ]},
+    { name: 'Month 3 · Autopilot v1', goal: 'Goal: 150 launches, $2K this month', weeks: [
+      { b: 'Directory submission service (the ones AI cites)', g: 'Show HN post', m: 'Directory submissions $99–199' },
+      { b: 'Connect Reddit account + thread finder', g: 'Test it on our own account' },
+      { b: 'Reddit drafts → one-tap approve → safe auto-post', g: '5 beta makers use it and give feedback' },
+      { b: 'Bundle everything into one launch package', g: 'Publish case study #1', m: 'Autopilot Launch $149' }
+    ]},
+    { name: 'Month 4 · Subscriptions', goal: 'Goal: 50 paying subscribers', weeks: [
+      { b: '+30-day before/after report', g: 'Publish the first real results' },
+      { b: 'Weekly AI score tracking', g: 'Email every past launcher with an offer', m: 'Starter $29/month' },
+      { b: '“Which directories does AI cite?” page, top 100', g: 'Tell each directory owner they’re rated' },
+      { b: 'Newsletter sponsor slots', g: 'Pitch 20 possible sponsors', m: 'Newsletter sponsor $49–500/issue' }
+    ]},
+    { name: 'Month 5 · Growth plan', goal: 'Goal: $6K this month', weeks: [
+      { b: 'More AI engines + competitor tracking', g: 'Comparison pages vs CodeHype, ScrollLaunch, MediaFast', m: 'Growth $99/month' },
+      { b: 'Affiliate program', g: 'Recruit 20 affiliates', m: '30% commission to partners' },
+      { b: 'Launch copy pack (Product Hunt, Reddit, X posts written for you)', g: '3 YouTube demo videos', m: 'Copy pack $49' },
+      { b: 'First monthly “What AI recommends” report', g: 'Pitch it to newsletters and writers', m: 'Full report $49' }
+    ]},
+    { name: 'Month 6 · Scale', goal: 'Goal: $13K this month', weeks: [
+      { b: 'Agency plan + white-label reports', g: 'Reach out to 30 agencies', m: 'Agency $299/month' },
+      { b: 'Profile setup service (G2, Capterra and similar)', g: 'Partner with 5 communities', m: 'Profile setup $149' },
+      { b: 'Category sponsors', g: 'Second monthly report', m: 'Category sponsor $99/month' },
+      { b: 'Fix the top complaints from users', g: 'Relaunch v2 on Product Hunt' },
+      { b: 'Referral credits for makers', g: '3 podcasts or guest posts' },
+      { b: 'Review all numbers', g: 'Cut what didn’t work, plan the next 6 months' }
+    ]}
+  ];
+  var KEY = 'launchautopilot-6mo';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+  var root = document.getElementById('months');
+  var weekNo = 0;
+  months.forEach(function (mo, mi) {
+    var sec = document.createElement('section');
+    sec.className = 'month';
+    var html = '<div class="mhead"><h3>' + mo.name + '</h3><span class="goal">' + mo.goal + '</span><span class="count" data-m="' + mi + '"></span></div>';
+    mo.weeks.forEach(function (w) {
+      weekNo++;
+      html += '<div class="week"><div class="n"><strong>' + weekNo + '</strong>week</div><div class="tasks">' +
+        item('w' + weekNo + 'b', 'build', 'Build', w.b, mi) +
+        item('w' + weekNo + 'g', 'grow', 'Grow us', w.g, mi) +
+        (w.m ? item('w' + weekNo + 'm', 'money', 'Money', w.m, mi) : '') +
+        '</div></div>';
+    });
+    sec.innerHTML = html;
+    root.appendChild(sec);
+  });
+  function item(id, cls, tag, text, mi) {
+    return '<label class="' + cls + '"><input type="checkbox" id="' + id + '" data-m="' + mi + '"' + (state[id] ? ' checked' : '') + '><span class="t"><i>' + tag + '</i>' + text + '</span></label>';
+  }
+  var boxes = Array.prototype.slice.call(root.querySelectorAll('input'));
+  function update() {
+    var done = boxes.filter(function (b) { return b.checked; }).length;
+    document.getElementById('total').textContent = done + ' of ' + boxes.length + ' tasks done';
+    document.getElementById('bar').style.width = (100 * done / boxes.length) + '%';
+    months.forEach(function (_, mi) {
+      var mine = boxes.filter(function (b) { return b.dataset.m === String(mi); });
+      var d = mine.filter(function (b) { return b.checked; }).length;
+      root.querySelector('.count[data-m="' + mi + '"]').textContent = d + '/' + mine.length;
+    });
+  }
+  boxes.forEach(function (b) {
+    b.addEventListener('change', function () {
+      state[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      update();
+    });
+  });
+  update();
+})();
+</script>

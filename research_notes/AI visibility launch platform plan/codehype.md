@@ -5,9 +5,11 @@ Research date: 2026-09-30. The site was fetched directly: homepage, /pricing, /a
 ## 1. What the product is and the user journey
 
 ### Takeaway
+
 CodeHype is a Product Hunt–style launch board and directory for AI and SaaS products, about 6 weeks old. A founder submits a product. The team reviews it by hand and publishes it at /product/{slug}, where it ranks by upvotes on daily and weekly boards. The real product being sold is backlinks (dofollow if you install a badge, or permanent if you pay), plus ad slots and a done-for-you service that submits your product to other directories.
 
 ### Cited Findings
+
 - Self-description: "an AI and SaaS product directory and launch platform. Founders submit AI tools, agents, APIs, and startups; listings are human-reviewed before they appear." — [llms.txt](https://www.codehype.ai/llms.txt)
 - The About page describes a 4-step flow: Submit → Review ("Public launches are reviewed by the CodeHype team before publication") → Launch ("Approved products receive a dedicated public CodeHype product page indexed for search and AI discovery") → Discover (upvote, visit website). — [About](https://www.codehype.ai/about)
 - Discovery surfaces: the homepage and /explore rank launches "by votes, comments, and recency". There is also a weekly board (/launches), /winners, 12 category pages, and 3 "focused catalogs" (/saas-directory, /ai-tools-directory, /startup-directory). — [llms.txt](https://www.codehype.ai/llms.txt)
@@ -18,18 +20,22 @@ CodeHype is a Product Hunt–style launch board and directory for AI and SaaS pr
 - The pricing page mentions a weekly newsletter digest, "highlights products that moved". — [Pricing](https://www.codehype.ai/pricing)
 
 ### Inferences
+
 - Functionally this is a clone of the "PH alternative" pattern (TinyLaunch, MicroLaunch and others): a scheduled launch date, upvotes, weekly winners, and a badge-for-backlink trade. What sets it apart is the machine-readable/agent layer (see §4) and the founder's existing social audience.
 
 ### Gaps
+
 - I could not verify how the free queue works (waiting period, daily slot count). The PH-alternative page says "limited daily slots and a waiting period" but gives no numbers, and /guidelines does not mention it.
 - I could not verify how weekly winners are chosen beyond upvotes.
 
 ## 2. Pricing, tiers and paid "boost" mechanics
 
 ### Takeaway
+
 There are three one-time launch tiers ($0 / $15 / $25), weekly homepage ads ($15–$20/week), Instagram promos (from $250) and directory-submission packages ($49 / $99 / $149). No subscription exists. Almost every paid lever is framed around dofollow links.
 
 ### Cited Findings
+
 - **Free Launch, $0.** Standard listing queue, public product page, "dofollow while the badge stays on your site". Instant publish, top-of-home placement and the premium badge are not included. — [Pricing](https://www.codehype.ai/pricing)
 - **How the badge works:** "Embed a CodeHype badge on your product website, then click Verify… While the badge stays verified, your CodeHype product page links to your site as dofollow. We re-check automatically every 3 days." — [Pricing FAQ](https://www.codehype.ai/pricing)
 - **Plus, $15 one-time per product ("Most popular").** Launch on a chosen date, instant publish, no waiting period, no badge required, "Permanent dofollow backlink", premium badge, priority placement. — [Pricing](https://www.codehype.ai/pricing)
@@ -44,19 +50,23 @@ There are three one-time launch tiers ($0 / $15 / $25), weekly homepage ads ($15
 - Through the public API, 40 of 279 products carry `featured: true`. — [/v1/products](https://www.codehype.ai/v1/products)
 
 ### Inferences
+
 - Revenue per customer is tiny ($15–$25 one-time). The higher-ticket items are the directory service ($49–$149) and Instagram ($250+). Unsold ad inventory (most slots open) suggests ad demand is still low.
 - The "1500 word dedicated blog" in Pro is where most of the blog comes from (see §3). It is paid, product-specific content.
 
 ### Gaps
+
 - I could not see what share of launches are Free, Plus or Pro; the API does not expose the tier. The 40 "featured" products are a lower bound on paid placements.
 - No revenue figures are public.
 
 ## 3. How CodeHype gets its own domain ranked and trafficked
 
 ### Takeaway
+
 The site is very young: the earliest product is dated 2026-08-19, and it has about 370 URLs. Its SEO playbook is modest and standard: programmatic product pages titled "{Product} Review 2026: Features, Pricing and Alternatives", "X alternative(s)" landing pages targeting competitor brand names, "launch platform" keyword pages, three backlink-listicle blog posts, and paid product blogs. Its own backlinks come mostly from the badges customers embed on their sites and from submitting itself to other directories. I found no independent traffic or DR data, and its own traction claims contradict each other.
 
 ### Cited Findings
+
 - The sitemap has 372 URLs: 278 /product/, 32 /blog/, 12 /category/, 8 /launches/. It also has pairs of competitor-alternative pages (product-hunt-alternative(s), tinylaunch-, microlaunch-, scrolllaunch-, startupbase-alternative(s)) plus /product-launch-platform, /saas-launch-platform, /launch-saas, /launch-ai-tool, /submit-saas and /compare. — [sitemap.xml](https://www.codehype.ai/sitemap.xml)
 - Earliest sitemap lastmod is 2026-08-19. By launch month the API shows 82 products in Aug 2026 and 197 in Sep 2026. — [sitemap.xml](https://www.codehype.ai/sitemap.xml); [/v1/products](https://www.codehype.ai/v1/products). Launch Llama says it "launched in August 2026". — [Launch Llama](https://tools.launchllama.co/products/codehype)
 - Product page `<title>` pattern: "Find AI Credits Review 2026: Features, Pricing and Alternatives". The page has canonical and `index, follow` tags. Its JSON-LD is only `WebPage` + `BreadcrumbList`, with no `SoftwareApplication`, `Product`, `Offer`, `AggregateRating` or `Review` schema. — [product page](https://www.codehype.ai/product/find-ai-credits) (raw HTML inspected)
@@ -74,18 +84,22 @@ The site is very young: the earliest product is dated 2026-08-19, and it has abo
 - Engagement is low. Across all 279 products the median is 3 upvotes, the maximum 59, and the total 1,757. — [/v1/products](https://www.codehype.ai/v1/products)
 
 ### Inferences
+
 - The "100,000 visitors this month" figure is very unlikely to be organic search traffic for a 6-week-old domain with about 370 URLs. More likely it is social-driven, loosely counted, or aspirational. Treat it as unverified.
 - The big social numbers (100K Instagram, 250K–5M reach) most likely come from the founder's earlier coding-education content brand, also named "CodeHype" (see §5), not from a launch-platform audience.
 - The "{Product} Review 2026: Features, Pricing and Alternatives" titles target long-tail "[product] review / alternatives" searches for the listed products. That traffic is inherently tiny for unknown indie products.
 
 ### Gaps
+
 - I could not get Ahrefs DR/UR, referring domains, organic keywords or a Similarweb traffic estimate. The Ahrefs public page returned a redirect, and no public SEO snippet exists in search results. Treat all traffic figures as unverified.
 - I could not confirm the Instagram follower count (Instagram returned HTTP 429).
 
 ## 4. How it claims to make listed products rank in Google and AI answer engines
 
 ### Takeaway
+
 The claim is general ("get discovered across Google, AI search, and LLMs") and rests on four things:
+
 1. A dofollow backlink from an indexed product page.
 2. A done-for-you submission service to other directories.
 3. A very complete machine-readable layer: llms.txt, llms-full.txt, ai.txt, a JSON index, an OpenAPI REST API and an unauthenticated MCP server.
@@ -94,6 +108,7 @@ The claim is general ("get discovered across Google, AI search, and LLMs") and r
 The only "proof" offered is a Domain Rating (DR) case study on a domain the founder appears to own. No evidence is offered that any listed product appears in ChatGPT, Perplexity, Gemini or AI Overviews answers.
 
 ### Cited Findings
+
 - Core claim: "Launch your startup for free, earn a quality backlink, and get discovered across Google, AI search, and LLMs." — [/api/ai](https://www.codehype.ai/api/ai); the same line is in the site footer.
 - **Backlink mechanics.** Free listings are dofollow only while a badge on the customer's site stays verified (re-checked every 3 days). Plus/Pro give a "permanent dofollow backlink", Pro adds "2 additional backlinks", and the sidebar ad is dofollow. — [Pricing](https://www.codehype.ai/pricing). The outbound "Visit" links I checked on product pages carry `rel="noopener noreferrer"` with no `nofollow`, so they are dofollow. — [product page raw HTML](https://www.codehype.ai/product/find-ai-credits)
 - **Directory service claim:** "Build high-quality backlinks, boost your online visibility, improve your Google rankings, and get discovered by AI search." — [Directories](https://www.codehype.ai/directories)
@@ -110,18 +125,21 @@ The only "proof" offered is a Domain Rating (DR) case study on a domain the foun
   - an MCP server at /mcp (JSON-RPC, protocol 2025-03-26, no auth, 40 req/min), whose tools include search_products, search_ai_tools, get_product_details, get_trending_products and get_stats
 
   — [robots.txt](https://www.codehype.ai/robots.txt); [llms.txt](https://www.codehype.ai/llms.txt); [ai.txt](https://www.codehype.ai/ai.txt); [mcp.json](https://www.codehype.ai/.well-known/mcp.json)
+
 - ai.txt asks agents: "Attribution: link to the canonical CodeHype product URL when citing a listing." — [ai.txt](https://www.codehype.ai/ai.txt)
 - The product page includes icon links titled OpenAI, Claude, Perplexity and Grok (alongside social icons). — [product page raw HTML](https://www.codehype.ai/product/find-ai-credits)
 - **Schema:** product pages only emit WebPage + BreadcrumbList JSON-LD, with no SoftwareApplication or Product entity. — [product page raw HTML](https://www.codehype.ai/product/find-ai-credits)
 - The PH submission framed it this way: "While most SaaS directories are built around selling backlinks… When you list on CodeHype, you're not just getting a backlink—you're getting distribution, visibility, and a chance to reach real users." — [hunted.space](https://hunted.space/product/codehype)
 
 ### Inferences
+
 - The only DR case study appears to be the founder's own site. That makes it self-referential, not independent proof. It also measures Ahrefs DR, which is a third-party proxy, not rankings or traffic.
 - The AI-engine layer (llms.txt, MCP, OpenAPI) makes CodeHype's own catalog easy for agents to read. It does nothing to put a customer's product into ChatGPT or Perplexity answers, unless those engines actually retrieve CodeHype pages. No evidence of that is offered.
 - The ChatGPT/Claude/Perplexity/Grok icons are most likely "ask AI about this page" prefill links (a common GEO gimmick). They are not distribution into those engines. I could not confirm the exact link targets.
 - The "LaunchRanked" mention on the homepage ("Rank on Google and get cited by AI") appears to be a sponsored ad or listing for a separate product (launchranked is a listed product and has a paid blog post). It is not a CodeHype feature.
 
 ### Gaps
+
 - There is no case study, screenshot or data showing any listed product cited by ChatGPT, Perplexity, Gemini, Claude or AI Overviews.
 - I could not verify the full 100+ directory list (only 25 rendered server-side) or how many submissions actually go live or are indexed.
 - I could not confirm whether CodeHype product pages themselves are indexed or ranking in Google.
@@ -129,9 +147,11 @@ The only "proof" offered is a Domain Rating (DR) case study on a domain the foun
 ## 5. Founder, launch date, traction and sentiment
 
 ### Takeaway
+
 It is a solo-founder project by Haris Ahmad Kaboo (X: @harisahmad59), who reuses the "CodeHype" name from an earlier coding-education and content brand. The launch platform went live around 19 Aug 2026 and has had a weak reception: 3 upvotes on Product Hunt, a handful of third-party listings, and no organic community discussion found.
 
 ### Cited Findings
+
 - Founder: "Haris Ahmad Kaboo, Founder & Builder, CodeHype". — [About](https://www.codehype.ai/about). Contact: haris@codehype.ai. — [llms.txt](https://www.codehype.ai/llms.txt)
 - Social handles: Instagram @codehype_, X @harisahmad59, LinkedIn, YouTube. — [Homepage](https://www.codehype.ai/)
 - An earlier CodeHype entity appears with a separate domain [codehype.in](https://codehype.in/about-us/) and a [Medium post "Elevate Your Coding Game with CodeHype"](https://medium.com/@harismushtaq59/from-novice-to-ninja-elevate-your-coding-game-with-codehype-fe7511f8c05c). A Tracxn profile exists. — [Tracxn](https://tracxn.com/d/companies/codehype/__2XTEqHonTLUlGhWPL7atHBjNMo_7l7J41oE1AYzzPzg). A search summary described that earlier brand as founded Jan 2023 as a tech-learning platform with the founder having "200,000 followers across platforms". I did not open these pages, so that summary is unverified.
@@ -142,18 +162,22 @@ It is a solo-founder project by Haris Ahmad Kaboo (X: @harisahmad59), who reuses
 - Several listings are themselves SEO/GEO tools or launch directories, including Refine AI ("monitors ChatGPT, Claude, Gemini, Perplexity and Google AI Overviews"), Rankcow, CompeteScan (an AI visibility checker), LaunchRanked, IndieTools, Free SEO Tools and ToolSift. — [product page sidebar](https://www.codehype.ai/product/find-ai-credits); [sitemap.xml](https://www.codehype.ai/sitemap.xml)
 
 ### Inferences
+
 - The customer base is largely indie makers chasing backlinks. Many are other directory or SEO builders swapping listings, which is typical of the "launch directory" niche.
 
 ### Gaps
+
 - I found no Reddit, IndieHackers or X threads reviewing CodeHype, so there is no organic user sentiment or criticism available. The absence is itself a signal of low awareness.
 - I could not verify the Instagram and YouTube follower counts.
 
 ## 6. Strengths, weaknesses and gaps a competitor could exploit
 
 ### Takeaway
+
 CodeHype's real strengths are cheap pricing, fast human review, an unusually thorough agent/LLM-readable layer (MCP + OpenAPI + llms.txt) and a founder with an existing social audience. Its weaknesses are a young, low-authority domain, unproven and contradictory claims, a self-referential case study, thin schema, low engagement, and no measurement of AI-answer visibility at all.
 
 ### Cited Findings
+
 - Strengths:
   - $0 to $25 one-time launches with a dofollow link option. — [Pricing](https://www.codehype.ai/pricing)
   - A full agent stack: MCP, OpenAPI, llms.txt, an RFC 9727 api-catalog. — [ai.txt](https://www.codehype.ai/ai.txt)
@@ -169,7 +193,9 @@ CodeHype's real strengths are cheap pricing, fast human review, an unusually tho
   - Ad inventory is largely unsold. — [Pricing](https://www.codehype.ai/pricing)
 
 ### Inferences
+
 Openings for a competitor:
+
 - **Measurable AI visibility.** Nobody in this tier shows before/after citation tracking in ChatGPT, Perplexity, Gemini or AI Overviews. A platform that runs prompt panels per listing and reports share-of-answer would beat "DR went up" proof.
 - **Richer entity data.** Full `SoftwareApplication`/`Organization` schema with `sameAs`, pricing `Offer`, FAQ and comparison data per product. That data is what AI engines extract, and CodeHype omits it.
 - **Honest, audited metrics.** A public traffic dashboard (e.g. Plausible), and case studies on customers not owned by the founder.
@@ -178,4 +204,5 @@ Openings for a competitor:
 - **Cheap to clone.** The whole stack (Next.js/Supabase/Vercel) and the feature set are easy to copy. The defensible assets would be audience, domain authority and verified AI-citation outcomes.
 
 ### Gaps
+
 - There is no independent SEO data (DR, referring domains, organic traffic) to size CodeHype's actual authority. That needs a paid Ahrefs/Semrush lookup.

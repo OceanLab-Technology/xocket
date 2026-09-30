@@ -6,7 +6,14 @@ export default tseslint.config(
   {
     // build/ holds the generated standalone bundle; templates/ is copied
     // verbatim into generated projects and linted there, not here.
-    ignores: ['dist/**', 'build/**', 'node_modules/**', 'templates/**', 'coverage/**'],
+    ignores: [
+      'dist/**',
+      'build/**',
+      'node_modules/**',
+      'templates/**',
+      'coverage/**',
+      'launchautopilot/**',
+    ],
   },
   {
     files: ['**/*.ts'],
