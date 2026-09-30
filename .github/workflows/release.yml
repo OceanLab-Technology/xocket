@@ -270,4 +270,4 @@ jobs:
       - name: Publish
         # With Trusted Publishing configured on npmjs.com this needs no token —
         # npm verifies the OIDC identity of this workflow instead.
-        run: npm publish --provenance --access public
+        run: npx npm@11 publish --provenance --access public
