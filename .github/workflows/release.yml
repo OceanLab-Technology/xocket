@@ -258,7 +258,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -269,8 +268,5 @@ jobs:
 
       - name: Publish
         # With Trusted Publishing configured on npmjs.com this needs no token —
-        # npm verifies the OIDC identity of this workflow instead. NODE_AUTH_TOKEN
-        # is the fallback for repos that have not set that up.
+        # npm verifies the OIDC identity of this workflow instead.
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
