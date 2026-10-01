@@ -242,7 +242,7 @@ jobs:
   publish:
     name: Publish to npm
     needs: [verify, smoke, installer]
-    if: github.ref_type == 'tag' || inputs.dry_run == false
+    if: github.ref_type == 'tag' && inputs.dry_run != true
     runs-on: ubuntu-latest
     environment:
       name: npm
